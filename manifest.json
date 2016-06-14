@@ -1,0 +1,42 @@
+{
+  "name": "ESRI Rest Diagnostics for Chrome",
+  "version": "0.0.1",
+  "manifest_version": 2,
+  "description": "A tool for interacting with, analyzing, and troubleshooting ArcGIS REST Services.",
+  "homepage_url": "https://github.com/raykendo/ERD-for-Chrome",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "default_locale": "en",
+  "background": {
+    "scripts": [
+      "src/bg/background.js"
+    ],
+    "persistent": false
+  },
+  "page_action": {
+    "default_icon": "icons/icon19.png",
+    "default_title": "page action demo",
+    "default_popup": "src/page_action/page_action.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.google.com/*"
+      ],
+      "css": [
+        "src/inject/inject.css"
+      ]
+    },
+    {
+      "matches": [
+        "https://www.google.com/*"
+      ],
+      "js": [
+        "src/inject/inject.js"
+      ]
+    }
+  ]
+}
