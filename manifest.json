@@ -24,6 +24,7 @@
   "content_scripts": [
     {
       "matches": [
+        "*://*/*/rest/services",
         "*://*/*/rest/services/*"
       ],
       "css": [
@@ -32,6 +33,7 @@
     },
     {
       "matches": [
+        "*://*/*/rest/services",
         "*://*/*/rest/services/*"
       ],
       "js": [
