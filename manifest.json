@@ -18,13 +18,13 @@
   },
   "page_action": {
     "default_icon": "icons/icon19.png",
-    "default_title": "page action demo",
+    "default_title": "ESRI REST Diagnostics",
     "default_popup": "src/page_action/page_action.html"
   },
   "content_scripts": [
     {
       "matches": [
-        "https://www.google.com/*"
+        "*://*/*/rest/services/*"
       ],
       "css": [
         "src/inject/inject.css"
@@ -32,11 +32,14 @@
     },
     {
       "matches": [
-        "https://www.google.com/*"
+        "*://*/*/rest/services/*"
       ],
       "js": [
         "src/inject/inject.js"
       ]
     }
+  ],
+  "permissions": [
+    "tabs"
   ]
 }
