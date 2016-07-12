@@ -43,8 +43,19 @@
 				urls = Array.prototype.map.call(tags, function (tag, i) {
 					return {i: i, url: tag.href};
 				}).filter(function (item) {
+					if (tags[item.i].parentNode.className === "breadcrumbs") {
+						return false;
+					}
 					return /(map|feature|image|mobile)server\/?$/i.test(item.url);
 				});
+
+				function toggleCollapse() {
+					if (this.className.indexOf("collapsed") > -1) {
+						this.className = this.className.replace(" collapsed", "");
+					} else {
+						this.className += " collapsed";
+					}
+				}
 
 				function collectData(f) {
 					if (!f.length) { return; }
@@ -52,7 +63,10 @@
 					ajax(data.url + "?f=json",
 						function (response) {
 							var dF = document.createDocumentFragment(),
+								div = document.createElement("div");
 								ul = document.createElement("ul");
+							div.className = "datablock collapsed";
+
 							add(dF, "Description", response.description, true);
 							add(dF, "Service Description", response.serviceDescription, true);
 							add(dF, "&copy;", response.copyrightText, true);
@@ -70,7 +84,9 @@
 							}
 							addSubList(dF, "Document Info", response.documentInfo);
 							add(dF, "Max Record Count", response.maxRecordCount);
-							tags[data.i].parentNode.appendChild(ul);
+							tags[data.i].parentNode.appendChild(div);
+							div.appendChild(ul);
+							div.addEventListener("click", toggleCollapse.bind(div));
 							ul.appendChild(dF);
 							if (f.length) {
 								collectData(f);

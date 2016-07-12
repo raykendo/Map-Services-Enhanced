@@ -1,3 +1,21 @@
 /**
  * Place your custom CSS styles here.
  **/
+.datablock {
+    border: solid 1px #669;
+    padding: 2px;
+    background-color: white;
+
+}
+.datablock > ul {
+    height: auto;
+    transition: height 0.5s ease;
+}
+.datablock.collapsed::after {
+    content: 'Click to show details...';
+    color: #669;
+}
+.collapsed > ul {
+    height: 0;
+    display: none;
+}
