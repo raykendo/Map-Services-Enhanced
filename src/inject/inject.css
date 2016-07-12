@@ -2,20 +2,28 @@
  * Place your custom CSS styles here.
  **/
 .datablock {
-    border: solid 1px #669;
     padding: 2px;
     background-color: white;
-
+    display: inline;
+}
+.datablock::before {
+    content: 'Click to hide details...';
+    color: #669;
+    cursor: pointer;
+    margin: 0 0 0 1em;
 }
 .datablock > ul {
+    border: solid 1px #669;
     height: auto;
     transition: height 0.5s ease;
+    margin: 0.3em 0;
 }
-.datablock.collapsed::after {
+.datablock.collapsed::before {
     content: 'Click to show details...';
-    color: #669;
 }
+.collapsed > br,
 .collapsed > ul {
     height: 0;
     display: none;
+    border: 0;
 }
