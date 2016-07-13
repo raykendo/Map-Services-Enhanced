@@ -20,7 +20,11 @@
 	function add(node, title, content, hideifContentFalse, hideContent) {
 		if (hideifContentFalse && !content) { return; }
 		var li = document.createElement("li");
-		li.innerHTML = ["<b>", title, "</b>", (hideContent ? "": ": " + (content instanceof Object ? JSON.stringify(content) : content))].join("");
+		if (content === undefined) {
+			li.innerHTML = ["<b>","</b>"].join(title);
+		} else {
+			li.innerHTML = ["<b>", title, "</b>", (hideContent ? "": ": " + (content instanceof Object ? JSON.stringify(content) : content))].join("");
+		}
 		node.appendChild(li);
 	}
 
@@ -122,18 +126,60 @@
 			add(dF, "Description", data.description, true);
 			add(dF, "Service Description", data.serviceDescription, true);
 			add(dF, "&copy;", data.copyrightText, true);
-			add(dF, "Supports Dynamic Layers", 0, data.supportsDynamicLayers, 1);
-			add(dF, "# Layers", data.layers ? data.layers.length : 0);
-			add(dF, "# Tables", data.tables ? data.tables.length : 0, 1);
+			if (data.hasOwnProperty("supportsDynamicLayers")) {
+				add(dF, "Supports Dynamic Layers", 0, data.supportsDynamicLayers, 1);
+			}
+			if (data.hasOwnProperty("layers")) {
+				add(dF, "# Layers", data.layers.length);
+			}
+			if (data.hasOwnProperty("tables")) {
+				add(dF, "# Tables", data.tables.length, 1);
+			}
 			add(dF, "Min Scale", data.minScale || "None");
 			add(dF, "Max Scale", data.maxScale || "None");
-			addSubList(dF, "Initial Extent", data.initialExtent);
-			addSubList(dF, "Full Extent", data.fullExtent);
+			if (data.hasOwnProperty("initialExtent")) {
+				addSubList(dF, "Initial Extent", data.initialExtent);
+			}
+			if (data.hasOwnProperty("fullExtent")) {
+				addSubList(dF, "Full Extent", data.fullExtent);
+			}
+			
 			if (data.hasOwnProperty("units")) {
 				add(dF, "Units", data.units.replace("esri", ""));							
 			}
-			addSubList(dF, "Document Info", data.documentInfo);
+			if (data.hasOwnProperty("documentInfo")) {
+				addSubList(dF, "Document Info", data.documentInfo);
+			}
 			add(dF, "Max Record Count", data.maxRecordCount);
+			if (data.hasOwnProperty("geometryType")) {
+				add(dF, "Geometry", data.geometryType.replace("esriGeometry", ""));
+			}
+			if (data.definitionExpression) {
+			    add(dF, "Definition Expression", data.definitionExpression);
+			}
+			if (data.hasOwnProperty("defaultVisibility")) {
+				add(dF, "Visible by default", data.defaultVisibility.toString());
+			}
+			if (data.hasAttachments) {
+				add(dF, "Has Attachments");
+			}
+			if (data.hasLabels) {
+			    add(dF, "Has Labels");
+			}
+			if (data.supportsStatistics) {
+			    add(dF, "Supports Statistics");
+			}
+			if (data.supportsAdvancedQueries) {
+			    add(dF, "Supports Advanced Queries");
+			}
+			if (data.relationships && data.relationships.length) {
+			    add(dF, "Has Relationships");
+			}
+			if (data.hasOwnProperty("isDataVersioned")) {
+				add(dF, "Versioned Data", data.isDataVersioned ? "Yes" : "No");
+			}
+			
+				
 			ul.appendChild(dF);
 			div.addEventListener("click", toggleCollapse.bind(div));
 
@@ -166,7 +212,7 @@
 					if (tags[item.i].parentNode.className === "breadcrumbs") {
 						return false;
 					}
-					return /(map|feature|image|mobile)server\/?$/i.test(item.url);
+					return /(map|feature|image|mobile)server(\/\d*\/?)?$/i.test(item.url);
 				});
 
 				function collectData(f) {
