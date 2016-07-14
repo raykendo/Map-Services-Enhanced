@@ -1,6 +1,6 @@
 {
   "name": "ArcGIS REST Enhanced for Chrome",
-  "short_name": "ArcGIS REST Enhanced"
+  "short_name": "ArcGIS REST Enhanced",
   "version": "0.0.0.2",
   "manifest_version": 2,
   "description": "An extension for analyzing, interrogating, and troubleshooting ArcGIS REST Services.",
