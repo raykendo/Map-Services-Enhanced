@@ -2,6 +2,14 @@
 	// ajax function from https://gist.github.com/Xeoncross/7663273
 	var colorhash = {};
 	
+	/**
+	 * requests data from a URL and returns it in JSON format
+	 * @function ajax
+	 * @param {string} u - URL to send the requests
+	 * @param {function} callback - function to call when results are returned
+	 * @param {object} [data] - optional information to send, triggers a post instead of a get requests
+	 * @param {object} [x] - state of the application
+	 */
 	function ajax(u, callback, data, x) {
 		try {
 			x = new(this.XMLHttpRequest)("MSXML2.XMLHTTP.3.0");
@@ -218,7 +226,6 @@
 				dF.appendChild(add("Versioned Data", data.isDataVersioned ? "Yes" : "No"));
 			}
 			
-				
 			ul.appendChild(dF);
 			div.addEventListener("click", toggleCollapse.bind(div));
 
@@ -345,7 +352,12 @@
 					collectData(urls);
 				}
 
-				// process 
+				// todo: handle Query page with quick query helpers
+				// todo: handle PrintTask page
+				// todo: tile testing
+				// todo: field data count
+				// todo: domain data count
+				// todo: geometry helper
 				
 			}
 		}, 10);
