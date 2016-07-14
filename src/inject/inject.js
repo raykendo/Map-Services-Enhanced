@@ -17,27 +17,50 @@
 		}
 	}
 
-	function add(node, title, content, hideifContentFalse, hideContent) {
-		if (hideifContentFalse && !content) { return; }
+	/**
+	 * Changes a text value from camel-case to title case
+	 * @function unCamelCase
+	 * @param {string} value - value to transform from camel case
+	 * @returns {string} - a string in title case form.
+	 */
+	function unCamelCase (value) {
+		return value.substr(0, 1).toUpperCase() + value.substr(1).replace(/([a-z])([A-Z])/g, "$1 $2");
+	}
+
+	/**
+	 * Adds a list item to a node if the property is there and maybe if a property is true.
+	 * @function add
+	 * @param {string} title - text to add in bold
+	 * @param {string | function} content - data to add after title in regular format
+	 * @returns {object} - list item node;
+	 */
+	function add(title, content) {
 		var li = document.createElement("li");
 		if (content === undefined) {
 			li.innerHTML = ["<b>","</b>"].join(title);
 		} else {
-			li.innerHTML = ["<b>", title, "</b>", (hideContent ? "": ": " + (content instanceof Object ? JSON.stringify(content) : content))].join("");
+			li.innerHTML = ["<b>", title, ": </b>", (content instanceof Object ? JSON.stringify(content) : content)].join("");
 		}
-		node.appendChild(li);
+		return li;
 	}
 
-	function addSubList(node, title, content) {
+	/**
+	 * Adds a list item to a node with the title of the property, and then itemizes ovoer the content object get all its properties
+	 * @function addSubList
+	 * @param {string} title - title of the list
+	 * @param {object} content - name, value pairs used to describe a feature.
+	 * @returns {object} - list item node containing list of properties.
+	 */
+	function addSubList(title, content) {
 		var li = document.createElement("li"), 
 			ul = document.createElement("ul"), 
 			i;
-		li.innerHTML = "<b>" + title + ":</b>";
+		li.innerHTML = ["<b>",": </b>"].join(title);
 		for (i in content) {
-			add(ul, i, content[i], 1);
+			ul.appendChild(add(unCamelCase(i), content[i]));
 		}
 		li.appendChild(ul);
-		node.appendChild(li);
+		return li;
 	}
 
 	/**
@@ -123,60 +146,76 @@
 			div.appendChild(document.createElement("br"));
 			ul = document.createElement("ul");
 			div.appendChild(ul);
-			add(dF, "Description", data.description, true);
-			add(dF, "Service Description", data.serviceDescription, true);
-			add(dF, "&copy;", data.copyrightText, true);
-			if (data.hasOwnProperty("supportsDynamicLayers")) {
-				add(dF, "Supports Dynamic Layers", 0, data.supportsDynamicLayers, 1);
+
+			if (data.hasOwnProperty("description") && data.description) {
+				//add("Description", data.description, true);
+				dF.appendChild(add("Description", data.description));
+			}
+			if (data.hasOwnProperty("serviceDescription") && data.serviceDescription) {
+				dF.appendChild(add("Service Description", data.serviceDescription));
+			}
+			if (data.hasOwnProperty("copyrightText") && data.copyrightText) {
+				dF.appendChild(add("&copy;", data.copyrightText));
+			}
+			if (data.hasOwnProperty("supportsDynamicLayers") && data.supportsDynamicLayers) {
+				dF.appendChild(add("Supports Dynamic Layers"));
 			}
 			if (data.hasOwnProperty("layers")) {
-				add(dF, "# Layers", data.layers.length);
+				dF.appendChild(add("# Layers", data.layers.length));
 			}
-			if (data.hasOwnProperty("tables")) {
-				add(dF, "# Tables", data.tables.length, 1);
+			if (data.hasOwnProperty("tables") && data.tables.length) {
+				dF.appendChild(add("# Tables", data.tables.length));
 			}
-			add(dF, "Min Scale", data.minScale || "None");
-			add(dF, "Max Scale", data.maxScale || "None");
+			if (data.hasOwnProperty("minScale")) {
+				dF.appendChild(add("Min Scale", data.minScale || "None"));
+			}
+			if (data.hasOwnProperty("maxScale")) {
+				dF.appendChild(add("Max Scale", data.maxScale || "None"));
+			}
 			if (data.hasOwnProperty("initialExtent")) {
-				addSubList(dF, "Initial Extent", data.initialExtent);
+				dF.appendChild(addSubList("Initial Extent", data.initialExtent));
 			}
 			if (data.hasOwnProperty("fullExtent")) {
-				addSubList(dF, "Full Extent", data.fullExtent);
+				dF.appendChild(addSubList("Full Extent", data.fullExtent));
 			}
-			
+			if (data.hasOwnProperty("extent")) {
+				dF.appendChild(addSubList("Extent", data.extent));
+			}
 			if (data.hasOwnProperty("units")) {
-				add(dF, "Units", data.units.replace("esri", ""));							
+				dF.appendChild(add("Units", data.units.replace("esri", "")));							
 			}
 			if (data.hasOwnProperty("documentInfo")) {
-				addSubList(dF, "Document Info", data.documentInfo);
+				dF.appendChild(addSubList("Document Info", data.documentInfo));
 			}
-			add(dF, "Max Record Count", data.maxRecordCount);
+			if (data.hasOwnProperty("documentInfo")) {
+				dF.appendChild(add("Max Record Count", data.maxRecordCount));
+			}
 			if (data.hasOwnProperty("geometryType")) {
-				add(dF, "Geometry", data.geometryType.replace("esriGeometry", ""));
+				dF.appendChild(add("Geometry", data.geometryType.replace("esriGeometry", "")));
 			}
 			if (data.definitionExpression) {
-			    add(dF, "Definition Expression", data.definitionExpression);
+			    dF.appendChild(add("Definition Expression", data.definitionExpression));
 			}
 			if (data.hasOwnProperty("defaultVisibility")) {
-				add(dF, "Visible by default", data.defaultVisibility.toString());
+				dF.appendChild(add("Visible by default", data.defaultVisibility.toString()));
 			}
 			if (data.hasAttachments) {
-				add(dF, "Has Attachments");
+				dF.appendChild(add("Has Attachments"));
 			}
 			if (data.hasLabels) {
-			    add(dF, "Has Labels");
+			    dF.appendChild(add("Has Labels"));
 			}
 			if (data.supportsStatistics) {
-			    add(dF, "Supports Statistics");
+			    dF.appendChild(add("Supports Statistics"));
 			}
 			if (data.supportsAdvancedQueries) {
-			    add(dF, "Supports Advanced Queries");
+			    dF.appendChild(add("Supports Advanced Queries"));
 			}
 			if (data.relationships && data.relationships.length) {
-			    add(dF, "Has Relationships");
+			    dF.appendChild(add("Has Relationships"));
 			}
 			if (data.hasOwnProperty("isDataVersioned")) {
-				add(dF, "Versioned Data", data.isDataVersioned ? "Yes" : "No");
+				dF.appendChild(add("Versioned Data", data.isDataVersioned ? "Yes" : "No"));
 			}
 			
 				
@@ -231,9 +270,13 @@
 								tags[data.i].parentNode.appendChild(metadata);
 							}
 							
+							// if url is a map service layer, query for number of features with shapes
+
 							if (f.length) {
 								collectData(f);
 							}
+
+
 						});
 				}
 
