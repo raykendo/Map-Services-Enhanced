@@ -228,6 +228,61 @@
 	}
 
 	/**
+	 * Queries for the feature count and the features with geometries
+	 * @function getLayerCount
+	 * @param {string} url - map service url
+	 * @param {object} data - the JSON data collected from the map service
+	 * @param {function} cb - callback function once the query is complete.
+	 */
+	function getLayerCount(url, data, cb) {
+		var queryUrl = url + "/query?where=not+field+is+null&returnGeometry=false&returnCountOnly=true&f=json",
+			ul = document.createElement("ul"),
+			oid, shape;
+
+		if (data && data.hasOwnProperty("objectIdField") && data.objectIdField) {
+			oid = data.objectIdField;
+		}
+		/*
+		if (data && data.hasOwnProperty("globalIdField") && data.globalIdField) {
+			oid = data.globalIdField;
+		}
+		*/
+		if (data && data.hasOwnProperty("fields") && data.fields.length) {
+			data.fields.some(function (field) {
+				switch(field.type) {
+					case "esriFieldTypeOID":
+					case "":
+						oid = field.name;
+						break;
+					case "esriFieldTypeGeometry":
+						shape = field.name;
+						break;
+				}
+
+				return oid && shape;
+			});
+		}
+
+		if (oid) {
+			ajax(queryUrl.replace(/\+field\+/g, ["+","+"].join(oid) ), function (response) {
+				ul.appendChild(add("Number of features", response.count ));
+			});
+		} else {
+			ul.appendChild(add("No way to query features."));
+		}
+		
+		if (shape) {
+			ajax(queryUrl.replace(/\+field\+/g, ["+", "+"].join(shape)), function (response) {
+				ul.appendChild(add("Features with shapes", response.count ));
+			})
+		} else if (!/\/featureserver\//i.test(url) && (data.type && data.type !== "Table")) {
+			ul.appendChild(add("No visible shape field available."));
+		}
+
+		cb(ul);
+	}
+
+	/**
 	 * toggles the collapeable state of an element.
 	 * @function toggleCollapse
 	 */
@@ -260,7 +315,8 @@
 					ajax(data.url + "?f=json",
 						function (response) {
 							var spatialReferenceNode = showSpatialReferenceData(response),
-								metadata = showMetadata(response);
+								metadata = showMetadata(response),
+								dataCount;
 							
 							if (spatialReferenceNode !== null) {
 								tags[data.i].parentNode.appendChild(spatialReferenceNode);	
@@ -270,7 +326,12 @@
 								tags[data.i].parentNode.appendChild(metadata);
 							}
 							
-							// if url is a map service layer, query for number of features with shapes
+							// if url is a map service layer, query for number of features && number of features with shapes
+							if (/server\/\d+\/?$/i.test(data.url)) {
+								getLayerCount(data.url, response, function (countList) {
+									tags[data.i].parentNode.appendChild(countList);
+								});
+							}
 
 							if (f.length) {
 								collectData(f);
@@ -283,6 +344,8 @@
 				if (urls && urls.length) {
 					collectData(urls);
 				}
+
+				// process 
 				
 			}
 		}, 10);
