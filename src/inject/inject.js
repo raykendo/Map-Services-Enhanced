@@ -301,15 +301,166 @@
 		}
 	}
 
+	/**
+	 * Gets the time difference between the current time and the time presented
+	 * @function responseTime
+	 * @param {number} timeValue - milliseconds since January 1, 1970 UTC 
+	 * @returns {string} - text display of seconds or milliseconds between now and time submitted.
+	 */
+	function responseTime (timeValue) {
+        var timeDiff = Date.now() - timeValue;
+        return "" + (timeDiff > 1000 ? timeDiff / 1000 : timeDiff + "m") + "s";
+	}
+
+	/**
+	 * gets a <b>old element previous to the current element
+	 * @function getPreviousLabel
+	 * @param {object} node - HTML DOM node
+	 * @returns {string} - content fo the <b> tag prior to the node
+	 */
+	function getPreviousLabel(node) {
+		var h = node; 
+		while (h.previousSibling) { 
+			h = h.previousSibling; 
+			if (h.tagName === "B") {
+				break; 
+			} 
+		} 
+		return h.innerHTML;
+	}
+
+	/**
+	 * Finds where the fields are listed on the current web page.
+	 * @function getFieldList
+	 * returns {object[]} - list of list items containing field data.
+	 */
+	function getFieldList () {
+		var uls = document.getElementsByTagName("ul"),
+			labels = [].map.call(uls, getPreviousLabel),
+			i;
+		for (i = uls.length - 1; i > -1; i--) {
+			if (/^Fields\:/.test(labels[i])) {
+				return [].slice.call(uls[i].children, 0);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Goes through each field in the list, requesting how many non-null values there are for that field.
+	 * @function checkForNulls
+	 * @param {string} url - map service url to query
+	 * @param {object[]} fields - list of JSON field data on that map service
+	 * @param {object[]} nodes - HTML DOM nodes corresponding to the fields in the other list.
+	 */
+	function checkForNulls(url, fields, nodes) {
+		if (!fields.length) { 
+			return; 
+		}
+		var field = fields.shift(),
+			node = nodes.shift(),
+			params = "/query?where=not+field+is+null&returnGeometry=false&returnCountOnly=true&f=json".replace("field", field.name),
+			resultList = document.createElement("ul"), timeCheck;
+			node.appendChild(resultList);
+			timeCheck = Date.now();
+		ajax(url + params,
+			function (response) {
+				var item = document.createElement("li"),
+					newTimeCheck;
+				item.innerHTML =  ["<b>Features with values: </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(timeCheck),"</i>)"].join("");
+				resultList.appendChild(item);
+				if (field.type === "esriFieldTypeString") {
+					newTimeCheck = Date.now();
+
+					ajax(url + "/query?where=not+field+is+null+and+field+<>%27%27&returnGeometry=false&returnCountOnly=true&f=json".replace(/field/g, field.name), 
+						function (response2) {
+							var item2 = document.createElement("li");
+							item2.innerHTML = ["<b>Features without empty values: </b>", response2.count, (!response2.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(newTimeCheck),"</i>)"].join("");
+
+							resultList.appendChild(item2);
+
+							if (fields.length) {
+								checkForNulls(url, fields, nodes);
+							}
+						});
+
+				} else 	if (fields.length) {	
+					checkForNulls(url, fields, nodes); 
+				}
+				
+			});
+	}
+
+	/**
+	 * Queries domain values for each 
+	 * @function checkDomains
+	 * @param {string} url - map service url to query
+	 * @param {object[]} fields - a list of field JSON provided by map service
+	 * @param {object[]} nodes - list of HTML DOM nodes corresponding to the fields list
+	 * @param {object} [tr] - possible list to attach domain search results to.
+	 */
+	function checkDomains(url, fields, nodes, tr) {
+		if (!fields.length) { return; }
+		if (!tr) {
+			var node = nodes.shift();
+			tr = document.createElement("ul");
+			node.appendChild(tr);
+		}
+		if (fields[0].length) {
+			var item = fields[0].shift(),
+			value = item.type === "esriFieldTypeString" ? "'" + item.code + "'" : item.code,
+			params = "/query?where=field+%3D+value&returnGeometry=false&returnCountOnly=true&f=json".replace("field", item.field).replace("value", value);
+			ajax(url + params,
+				function (response) {
+					var li = document.createElement("li");
+					li.innerHTML = ["<b>", item.name, ": </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>" : "")].join("");
+					tr.appendChild(li);
+					if (fields[0].length) {	
+						checkDomains(url, fields, nodes, tr); 
+					} else {
+						fields.shift();
+						if (fields.length) {
+							checkDomains(url, fields, nodes);
+						}
+					}
+				});
+		}
+	}
+
+	/**
+	 * Tests whether some field JSON has a coded value domain
+	 * @function hasDomainTest
+	 * @param {object} field - JSON data related to a map service layer field.
+	 * @returns {boolean} - if true, coded value domain is present.
+	 */
+	function hasDomainTest(field) {
+		return !!field && field.domain && field.domain.codedValues;
+	}
+
+	/**
+	 * Creates a button with the entered text.
+	 * function createButton
+	 * @param {string} text - text you want to insert within the button.
+	 */
+	function createButton(text) {
+		var button = document.createElement("button");
+		button.innerHTML = text;
+		button.setAttribute("type", "button");
+		return button;
+	}
+
+
 	chrome.extension.sendMessage({}, function(response) {
 		var readyStateCheckInterval = setInterval(function() {
 			if (document.readyState === "complete") {
 				clearInterval(readyStateCheckInterval);
 
+				// collect the links on the web page to collect information about the content they link to.
 				var	tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0),
 				urls = tags.map(function (tag, i) {
 					return {i: i, url: tag.href};
 				}).filter(function (item) {
+					// filter out links in the breadcrumbs section at the top of the page.
 					if (tags[item.i].parentNode.className === "breadcrumbs") {
 						return false;
 					}
@@ -344,7 +495,6 @@
 								collectData(f);
 							}
 
-
 						});
 				}
 
@@ -352,11 +502,80 @@
 					collectData(urls);
 				}
 
+
+
+				// get current url
+				//chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
+    				//var url = tabs[0].url;
+					var url = window.location.href;
+
+					// create a side-bar to house buttons that do stuff.
+					var sidepanel = document.createElement("div");
+					sidepanel.className = "sidepanel";
+					document.body.appendChild(sidepanel);
+
+					// field and domain data counting.
+					if (/\d+\/?$/.test(url)) {
+						ajax(url + "?f=json", function (results) {
+							if (results.fields && results.fields.length) {
+								var fieldHTML = getFieldList();
+
+								var panelbutton = createButton("Test Fields for nulls");
+
+								sidepanel.appendChild(panelbutton);
+
+								panelbutton.addEventListener("click", function () {
+									checkForNulls(url, results.fields.slice(0), fieldHTML.slice(0));
+								});
+
+								if (results.fields.some(hasDomainTest)) {
+									var domainFields = []
+										domainFieldHTML = fieldHTML.slice(0);
+
+									results.fields.forEach(function (field, i) {
+										if (hasDomainTest(field)) {
+											domainFields.push(field.domain.codedValues.map(function (item) {
+												// future reference: check if Object.assign supported by Chrome
+												item.field = field.name;
+												item.type = field.type;
+												return item;
+											}));
+										} else {
+											domainFieldHTML[i] = null
+
+										}
+									});
+
+									// filter out nulled out HTML nodes.
+									domainFieldHTML = domainFieldHTML.filter(function (item) {
+										return !!item;
+									});
+
+
+
+									var domainbutton = createButton("Test coded value domains");
+
+									sidepanel.appendChild(domainbutton);
+
+									domainbutton.addEventListener("click", function () {
+										checkDomains(url, domainFields, domainFieldHTML, null);
+									});
+									
+
+								}
+							}
+							
+						});
+
+					}
+
+				//});
+
+
 				// todo: handle Query page with quick query helpers
 				// todo: handle PrintTask page
 				// todo: tile testing
-				// todo: field data count
-				// todo: domain data count
+
 				// todo: geometry helper
 				
 			}

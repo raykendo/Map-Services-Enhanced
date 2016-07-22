@@ -27,3 +27,27 @@
     display: none;
     border: 0;
 }
+
+.sidepanel {
+    position: fixed;
+    left: auto;
+    right: 0;
+    width: 15em;
+    top: 5em;
+    bottom: 5em;
+    border: 1px solid #669;
+    border-right: 0;
+    border-radius: 5px 0 0 5px;
+    background: white;
+    z-index: 100;
+}
+
+.sidepanel button {
+    border: 0;
+    border-radius: 4px;
+    padding: 0.25em 0.5em;
+    background-color: #336;
+    color: White;
+    font-weight: bold;
+    z-index: 100;
+}
