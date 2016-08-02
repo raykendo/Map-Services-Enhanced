@@ -438,17 +438,78 @@
 	}
 
 	/**
+	 * Creates an HTML element.
+	 * @function loadElement
+	 * @param {string} tag - HTML tag name that you want to create.
+	 * @param {object} attributes - name value object describing properties you want to assign to the object
+	 * @param {string} [text] - if present, this is the content you shoul add to the HTML element.
+	 */
+	function loadElement (tag, attributes, text) {
+		var el = document.createElement(tag), a;
+		for (a in attributes) {
+			el.setAttribute(a, attributes[a]);
+		}
+		if (text) {
+			el.innerHTML = text;
+		}
+		return el;
+	}
+
+	/**
 	 * Creates a button with the entered text.
-	 * function createButton
+	 * @function createButton
 	 * @param {string} text - text you want to insert within the button.
 	 */
 	function createButton(text) {
-		var button = document.createElement("button");
-		button.innerHTML = text;
-		button.setAttribute("type", "button");
-		return button;
+		return loadElement("BUTTON", {"type": "button"}, text);
 	}
 
+
+	function swapInChoice(nodes, param) {
+		if (!param.choiceList) {
+			return;
+		}
+		var select = loadElement("select", {
+			"name": param.name
+		});
+		param.choiceList.forEach(function(choice) {
+			var option = loadElement("option", {
+				value: choice
+			}, choice);
+			select.appendChild(option);
+		});
+		select.value = param.defaultValue;
+		var myNode = nodes.filter(function (node) {
+			return node.name === param.name;
+		})[0];
+		myNode.parentNode.replaceChild(select, myNode);
+	}
+
+	function updateGPForm(response) {
+		var myForm, blanks = [], b;
+		console.log("response:::", response);
+		if (!response.parameters) {
+			alert("Could not find GP parameters for this task.");
+			return;
+		}
+		try {
+			myForm = document.getElementsByTagName("FORM")[0];
+			blanks = Array.prototype.slice.call(myForm.getElementsByTagName("TEXTAREA"), 0);
+			blanks = blanks.concat(Array.prototype.slice.call(myForm.getElementsByTagName("INPUT"), 0));
+			response.parameters.forEach(swapInChoice.bind(this, blanks));
+			blanks.some(function (blank) {
+				if (blank.name === "Web_Map_as_JSON") {
+					if (window.confirm("Do you want to add a default Web Map as JSON?")) {
+						blank.value = "{\"operationalLayers\":[],\"baseMap\":{\"baseMapLayers\":[{\"id\":\"defaultBasemap\",\"opacity\":1,\"visibility\":true,\"url\":\"http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer\"}],\"title\":\"Topographic\"},\"exportOptions\":{\"dpi\":300,\"outputSize\":[1280,1024]}}";
+					}
+				}
+				return blank.name === "Web_Map_as_JSON";
+			});
+		} catch (err) {
+			console.error(err);
+			alert("invalid form");
+		}
+	}
 
 	chrome.extension.sendMessage({}, function(response) {
 		var readyStateCheckInterval = setInterval(function() {
@@ -457,6 +518,17 @@
 
 				// collect the links on the web page to collect information about the content they link to.
 				var	tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0),
+					url = window.location.href.split("?")[0],
+					sidepanel = document.createElement("div"),
+					queryTest = /\d+\/query\/?$/i,
+					printTaskTest = /\/(execute|submitjob)\/?$/i,
+					urls;
+				
+				// set up side panel
+				sidepanel.className = "sidepanel";
+				document.body.appendChild(sidepanel);
+
+				// search for map service links on the page
 				urls = tags.map(function (tag, i) {
 					return {i: i, url: tag.href};
 				}).filter(function (item) {
@@ -467,6 +539,11 @@
 					return /(map|feature|image|mobile)server(\/\d*\/?)?$/i.test(item.url);
 				});
 
+				/**
+				 * collect and present service data based on a list of urls.
+				 * @function collectData
+				 * @param {string[]} f - a list of urls to collect data on.
+				 */
 				function collectData(f) {
 					if (!f.length) { return; }
 					var data = f.shift();
@@ -501,79 +578,52 @@
 				if (urls && urls.length) {
 					collectData(urls);
 				}
+				
+				// field and domain data counting.
+				if (/\d+\/?$/.test(url)) {
+					ajax(url + "?f=json", function (results) {
+						if (results.fields && results.fields.length) {
+							var fieldHTML = getFieldList(),
+								domainFields, domainFieldHTML;
 
+							checkForNulls(url, results.fields.slice(0), fieldHTML.slice(0));
 
+							if (results.fields.some(hasDomainTest)) {
+								domainFields = [];
+								domainFieldHTML = fieldHTML.slice(0);
 
-				// get current url
-				//chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
-    				//var url = tabs[0].url;
-					var url = window.location.href;
-
-					// create a side-bar to house buttons that do stuff.
-					var sidepanel = document.createElement("div");
-					sidepanel.className = "sidepanel";
-					document.body.appendChild(sidepanel);
-
-					// field and domain data counting.
-					if (/\d+\/?$/.test(url)) {
-						ajax(url + "?f=json", function (results) {
-							if (results.fields && results.fields.length) {
-								var fieldHTML = getFieldList();
-
-								var panelbutton = createButton("Test Fields for nulls");
-
-								sidepanel.appendChild(panelbutton);
-
-								panelbutton.addEventListener("click", function () {
-									checkForNulls(url, results.fields.slice(0), fieldHTML.slice(0));
+								results.fields.forEach(function (field, i) {
+									if (hasDomainTest(field)) {
+										domainFields.push(field.domain.codedValues.map(function (item) {
+											// future reference: check if Object.assign supported by Chrome
+											item.field = field.name;
+											item.type = field.type;
+											return item;
+										}));
+									} else {
+										domainFieldHTML[i] = null
+									}
 								});
 
-								if (results.fields.some(hasDomainTest)) {
-									var domainFields = []
-										domainFieldHTML = fieldHTML.slice(0);
+								// filter out nulled out HTML nodes.
+								domainFieldHTML = domainFieldHTML.filter(function (item) {
+									return !!item;
+								});
 
-									results.fields.forEach(function (field, i) {
-										if (hasDomainTest(field)) {
-											domainFields.push(field.domain.codedValues.map(function (item) {
-												// future reference: check if Object.assign supported by Chrome
-												item.field = field.name;
-												item.type = field.type;
-												return item;
-											}));
-										} else {
-											domainFieldHTML[i] = null
-
-										}
-									});
-
-									// filter out nulled out HTML nodes.
-									domainFieldHTML = domainFieldHTML.filter(function (item) {
-										return !!item;
-									});
-
-
-
-									var domainbutton = createButton("Test coded value domains");
-
-									sidepanel.appendChild(domainbutton);
-
-									domainbutton.addEventListener("click", function () {
-										checkDomains(url, domainFields, domainFieldHTML, null);
-									});
-									
-
-								}
+								checkDomains(url, domainFields, domainFieldHTML, null);
 							}
-							
-						});
+						}
+					});
+				}
 
-					}
-
-				//});
-
+				console.log("abouts to test print task");
+				// handling print task and other 
+				if (printTaskTest.test(url)) {
+					console.log("PRint task test complete.");
+					ajax(url.replace(printTaskTest, "") + "?f=json", updateGPForm);
+				}
 
 				// todo: handle Query page with quick query helpers
-				// todo: handle PrintTask page
 				// todo: tile testing
 
 				// todo: geometry helper
@@ -581,6 +631,5 @@
 			}
 		}, 10);
 	});
-
 
 }());
