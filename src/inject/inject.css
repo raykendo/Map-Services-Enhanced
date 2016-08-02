@@ -40,6 +40,8 @@
     border-radius: 5px 0 0 5px;
     background: white;
     z-index: 100;
+    /* temporary until Query Builder complete */
+    display: none;
 }
 
 .sidepanel button {
