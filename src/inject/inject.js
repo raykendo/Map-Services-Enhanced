@@ -156,6 +156,11 @@
       ul = document.createElement("ul");
       div.appendChild(ul);
 
+	  if (data.hasOwnProperty("error") && data.error) {
+		var node = addSubList("Error", data.error);
+		node.className += " error";
+		dF.appendChild(node);
+	  }
       if (data.hasOwnProperty("description") && data.description) {
         //add("Description", data.description, true);
         dF.appendChild(add("Description", data.description));
@@ -787,5 +792,4 @@
       }
     }, 10);
   });
-
 }());
