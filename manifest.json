@@ -4,7 +4,7 @@
   "version": "0.0.0.4",
   "manifest_version": 2,
   "description": "An extension for analyzing, interrogating, and troubleshooting ArcGIS REST Services.",
-  "homepage_url": "https://github.com/raykendo/ArcGIS-REST-Enhanced",
+  "homepage_url": "https://github.com/raykendo/Map-Services-Enhanced",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
