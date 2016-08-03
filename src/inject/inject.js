@@ -1,6 +1,7 @@
 (function () {
 	// ajax function from https://gist.github.com/Xeoncross/7663273
-	var colorhash = {};
+	var colorhash = {},
+		active;
 	
 	/**
 	 * requests data from a URL and returns it in JSON format
@@ -511,6 +512,115 @@
 		}
 	}
 
+	function clearActive() {
+		if (active !== undefined && active !== null) {
+			active.value = "";
+		}
+	}
+	function setActive(value) {
+		if (active !== undefined) {
+			// get cursor position
+			var oldVal = active.value.substring(0),
+				iCaretPos = oldVal.length;
+			active.focus();
+			if (d.selection) {
+				var oSel = d.selection.createRange();
+				oSel.moveStart("character", -active.value.length);
+				iCaretPos = oSel.text.length;
+			} else if ("selectionStart" in active) {
+				iCaretPos = active.selectionStart;
+			}
+			// insert clicked text
+			active.value = oldVal.substring(0, iCaretPos) + value + oldVal.substring(iCaretPos);
+
+			// reset cursor position
+			iCaretPos += value.length - (["()", "''"].indexOf(value) > -1);
+			if (active.createTextRange) {
+				var range = active.createTextRange();
+				range.move("character", iCaretPos);
+				range.select();
+			} else if ("selectionStart" in active) {
+				active.setSelectionRange(iCaretPos, iCaretPos);
+			}			
+		}
+	}
+
+	/**
+	 * Adds eventlisteners function to all nodes that match a querySelectorAll
+	 * @function listenAll
+	 * @param {object} node - HTML DOM parent node to use with querySelectorAll
+	 * @param {string} selector - CSS selector 
+	 * @param {string} evt - event name
+	 * @param {function} callback - callback function when event occurs.
+	 */
+	function listenAll(node, selector, evt, callback) {
+		[].forEach.call(node.querySelectorAll(selector), function (el) {
+			el.addEventListener(evt, callback);
+		});
+	}
+
+	/**
+	 * Builds the Query Helper panel
+	 * @function queryHelper
+	 * @param {string} url - url of the query service.
+	 * @param {object} data - JSON data from parent REST service
+	 */
+	function queryHelper(url, data) {
+		var sidepanel = loadElement("DIV", {"class": "sidepanel"}),
+			closeButton = loadElement("BUTTON", {"style": "float:right;", "size": "10"}, "Close"),
+			fieldSelect = loadElement("SELECT", {"title": "Double-click to add to form."}),
+			valueList = loadElement("SELECT", {"size": "10", "title": "Double-click to add to form."}),
+			btns = document.createElement("div");
+		// set up side panel
+		
+		closeButton.addEventListener("click", function (evt) {
+			evt.target.parentNode.parentNode.removeChild(evt.target.parentNode);
+		});
+		sidepanel.appendChild(closeButton);
+		sidepanel.appendChild(loadElement("b", {}, "Query Helper"));
+
+		var clearBtn = loadElement("BUTTON", {"type": "button", "style": "float: right; margin: 10px -54px 0px 0px;"}, "Clear");
+		clearBtn.addEventListener("click", clearActive);
+		sidepanel.appendChild(clearBtn);
+		
+		data.fields.forEach(function (field) {
+			fieldSelect.appendChild(loadElement("OPTION", {"value": field.name}, field.alias));	
+		});
+		sidepanel.appendChild(fieldSelect);
+		sidepanel.appendChild(valueList);
+		fieldSelect.addEventListener("change", function () {
+			var val = fieldSelect.value;
+			ajax(url + "?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), function (res) {
+				valueList.innerHTML = [].map.call(res.features, function (feature) {
+					var feature_value = isNaN(feature.attributes[val] * 1) ? "'" + feature.attributes[val] + "'" : feature.attributes[val];
+					var feature_text = feature.attributes[val];
+					return ["<option value=\"", feature_value, "\">", feature_text, "</option>"].join("");
+				});
+			});
+		});
+		[" = ", " &lt;&gt; ", " LIKE ", " &gt; ", " &gt;= ", " AND ", " &lt; ", " &lt;= ", " OR ", "_", "%", "()", "NOT ", " IS ", "*", "&#39;&#39;", " IN ", ", " ].forEach(function (txt) {
+			btns.appendChild(loadElement("button", {
+				"className": "sql",
+				"type": "button",
+				"name": txt
+			}, txt.replace(/\s+/g, "")));
+		});
+		sidepanel.appendChild(btns);
+		
+		document.body.appendChild(sidepanel);
+
+		// add events
+		listenAll(document, "input[type=text], textarea", "blur", function () { 
+			active = this; 
+		});
+		listenAll(sidepanel, "select", "dblclick", function (evt) {
+			setActive(evt.currentTarget.value);
+		});
+		listenAll(sidepanel, "button.sql", "click", function (evt) {
+			setActive(evt.currentTarget.name);
+		});
+	}
+
 	chrome.extension.sendMessage({}, function(response) {
 		var readyStateCheckInterval = setInterval(function() {
 			if (document.readyState === "complete") {
@@ -519,14 +629,11 @@
 				// collect the links on the web page to collect information about the content they link to.
 				var	tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0),
 					url = window.location.href.split("?")[0],
-					sidepanel = document.createElement("div"),
-					queryTest = /\d+\/query\/?$/i,
+					queryTest = /\/query\/?$/i,
 					printTaskTest = /\/(execute|submitjob)\/?$/i,
 					urls;
 				
-				// set up side panel
-				sidepanel.className = "sidepanel";
-				document.body.appendChild(sidepanel);
+				
 
 				// search for map service links on the page
 				urls = tags.map(function (tag, i) {
@@ -619,8 +726,12 @@
 				console.log("abouts to test print task");
 				// handling print task and other 
 				if (printTaskTest.test(url)) {
-					console.log("PRint task test complete.");
 					ajax(url.replace(printTaskTest, "") + "?f=json", updateGPForm);
+				}
+
+				// handling query page
+				if (queryTest.test(url)) {
+					ajax(url.replace(queryTest, "") + "?f=json", queryHelper.bind(this, url));
 				}
 
 				// todo: handle Query page with quick query helpers

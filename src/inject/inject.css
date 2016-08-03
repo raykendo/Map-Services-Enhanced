@@ -31,17 +31,16 @@
 .sidepanel {
     position: fixed;
     left: auto;
-    right: 0;
-    width: 15em;
+    right: 0.5em;
+    width: 35%;
     top: 5em;
     bottom: 5em;
-    border: 1px solid #669;
-    border-right: 0;
+    border: 1px solid #669;;
     border-radius: 5px 0 0 5px;
     background: white;
     z-index: 100;
-    /* temporary until Query Builder complete */
-    display: none;
+    overflow: auto;
+    padding: 0.3em;
 }
 
 .sidepanel button {
