@@ -90,11 +90,11 @@
 	 * @param {string} item - a CSS hex string for a color
 	 * @returns {string} a CSS hext string for a color that is either lighter or darker than the current color.
 	 */
-    function getCompColor(item) {
-      var col = colorhash[item],
-        newcol = "",
-		mid = [col.substr(1,1),col.substr(3,1),col.substr(5,1)].sort()[1],
-		coltbl = "fedcba98".indexOf(mid) > -1 ? "0000000001234567" : "89abcdefffffffff",
+        function getCompColor(item) {
+          var col = colorhash[item],
+            newcol = "",
+	    mid = [col.substr(1,1),col.substr(3,1),col.substr(5,1)].sort()[1],
+	    coltbl = "fedcba98".indexOf(mid) > -1 ? "0000000001234567" : "89abcdefffffffff",
 		c;
 		for (c = 0; c < col.length; c++) {
 			newcol += c%2 === 1 ? coltbl[parseInt(col.substr(c,1), 16)] : col.substr(c, 1);
