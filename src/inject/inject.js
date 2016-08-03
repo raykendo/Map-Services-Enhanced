@@ -512,19 +512,29 @@
     }
   }
 
+  /**
+   * clears the input stored within the "active" variable.
+   * @function clearActive
+   */
   function clearActive() {
     if (active !== undefined && active !== null) {
       active.value = "";
     }
   }
+  
+  /**
+   * sets the value of the input stored in the "active" variable
+   * @function setActive
+   * @param {string} value - input to insert in the "active" input
+   */
   function setActive(value) {
     if (active !== undefined) {
       // get cursor position
       var oldVal = active.value.substring(0),
         iCaretPos = oldVal.length;
       active.focus();
-      if (d.selection) {
-        var oSel = d.selection.createRange();
+      if (document.selection) {
+        var oSel = document.selection.createRange();
         oSel.moveStart("character", -active.value.length);
         iCaretPos = oSel.text.length;
       } else if ("selectionStart" in active) {
@@ -567,8 +577,8 @@
    */
   function queryHelper(url, data) {
     var sidepanel = loadElement("DIV", {"class": "sidepanel"}),
-      closeButton = loadElement("BUTTON", {"style": "float:right;", "size": "10"}, "Close"),
-      fieldSelect = loadElement("SELECT", {"title": "Double-click to add to form."}),
+      closeButton = loadElement("BUTTON", {"style": "float:right;"}, "Close"),
+      fieldSelect = loadElement("SELECT", {"size": "10", "title": "Double-click to add to form."}),
       valueList = loadElement("SELECT", {"size": "10", "title": "Double-click to add to form."}),
       btns = document.createElement("div");
     // set up side panel
@@ -578,8 +588,9 @@
     });
     sidepanel.appendChild(closeButton);
     sidepanel.appendChild(loadElement("b", {}, "Query Helper"));
-
-    var clearBtn = loadElement("BUTTON", {"type": "button", "style": "float: right; margin: 10px -54px 0px 0px;"}, "Clear");
+	sidepanel.appendChild(document.createElement("br"));
+	
+    var clearBtn = loadElement("BUTTON", {"type": "button", "style": "float: right;"}, "Clear");
     clearBtn.addEventListener("click", clearActive);
     sidepanel.appendChild(clearBtn);
     
@@ -607,6 +618,9 @@
     });
     sidepanel.appendChild(btns);
     
+	// add quick helpers
+	
+	
     document.body.appendChild(sidepanel);
 
     // add events
@@ -674,11 +688,9 @@
                   tags[data.i].parentNode.appendChild(countList);
                 });
               }
-
               if (f.length) {
                 collectData(f);
               }
-
             });
         }
 
@@ -734,9 +746,9 @@
           ajax(url.replace(queryTest, "") + "?f=json", queryHelper.bind(this, url));
         }
 
-        // todo: handle Query page 
         // todo: tile testing
         // todo: geometry helper
+        
       }
     }, 10);
   });
