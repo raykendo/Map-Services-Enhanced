@@ -580,7 +580,7 @@
    * @param {object} formData - JSON of name, value pairs to insert in the form
    */
   function quickFormFillin(formData) {
-    var formFields = Array.prototype.slice.call(document.getElementsByTagName("INPUT""), 0);
+    var formFields = Array.prototype.slice.call(document.getElementsByTagName("INPUT"), 0);
   
     formFields = formFields.concat(Array.prototype.slice.call(document.getElementsByTagName("TEXTAREA"), 0));
   
