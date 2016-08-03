@@ -79,10 +79,10 @@
    * @returns {string} a CSS hex string for a color.
    */
   function getColor(item) {
-        if (colorhash[item]) { return colorhash[item]; }
-        colorhash[item] = "#" + (0x1000000 + (Math.random()) * 0xffffff).toString(16).substr(1, 6);
-        return colorhash[item];
-    }
+    if (colorhash[item]) { return colorhash[item]; }
+    colorhash[item] = "#" + (0x1000000 + (Math.random()) * 0xffffff).toString(16).substr(1, 6);
+    return colorhash[item];
+  }
 
   /**
    * Calculates a complimentary shade or tint of a color to provide contrast
@@ -90,17 +90,17 @@
    * @param {string} item - a CSS hex string for a color
    * @returns {string} a CSS hext string for a color that is either lighter or darker than the current color.
    */
-        function getCompColor(item) {
-          var col = colorhash[item],
-            newcol = "",
+  function getCompColor(item) {
+    var col = colorhash[item],
+      newcol = "",
       mid = [col.substr(1,1),col.substr(3,1),col.substr(5,1)].sort()[1],
       coltbl = "fedcba98".indexOf(mid) > -1 ? "0000000001234567" : "89abcdefffffffff",
-    c;
+      c;
     for (c = 0; c < col.length; c++) {
       newcol += c%2 === 1 ? coltbl[parseInt(col.substr(c,1), 16)] : col.substr(c, 1);
     }
     return newcol;
-    }
+  }
 
   /**
    * Creates a node to display the spatial reference of a map service.
@@ -212,16 +212,16 @@
         dF.appendChild(add("Has Attachments"));
       }
       if (data.hasLabels) {
-          dF.appendChild(add("Has Labels"));
+        dF.appendChild(add("Has Labels"));
       }
       if (data.supportsStatistics) {
-          dF.appendChild(add("Supports Statistics"));
+        dF.appendChild(add("Supports Statistics"));
       }
       if (data.supportsAdvancedQueries) {
-          dF.appendChild(add("Supports Advanced Queries"));
+        dF.appendChild(add("Supports Advanced Queries"));
       }
       if (data.relationships && data.relationships.length) {
-          dF.appendChild(add("Has Relationships"));
+        dF.appendChild(add("Has Relationships"));
       }
       if (data.hasOwnProperty("isDataVersioned")) {
         dF.appendChild(add("Versioned Data", data.isDataVersioned ? "Yes" : "No"));
@@ -309,8 +309,8 @@
    * @returns {string} - text display of seconds or milliseconds between now and time submitted.
    */
   function responseTime (timeValue) {
-        var timeDiff = Date.now() - timeValue;
-        return "" + (timeDiff > 1000 ? timeDiff / 1000 : timeDiff + "m") + "s";
+    var timeDiff = Date.now() - timeValue;
+    return "" + (timeDiff > 1000 ? timeDiff / 1000 : timeDiff + "m") + "s";
   }
 
   /**
@@ -389,7 +389,7 @@
           checkForNulls(url, fields, nodes); 
         }
       }
-	);
+  );
   }
 
   /**
@@ -570,6 +570,41 @@
   }
 
   /**
+   * Inserts pre-defined data into a form on a page
+   * @function quickFormFillin
+   * @param {object} formData - JSON of name, value pairs to insert in the form
+   */
+  function quickFormFillin(formData) {
+    var formFields = Array.prototype.slice.call(document.getElementsByTagName("INPUT""), 0);
+  
+    formFields = formFields.concat(Array.prototype.slice.call(document.getElementsByTagName("TEXTAREA"), 0));
+  
+    formFields.forEach(function (item) {
+      if (formData.hasOwnProperty(item.name)) {
+        if (item.type && item.type === "radio" && formData[item.name] === item.value) {
+          item.checked = true;
+        } else {
+          item.value = formData[item.name];
+        }
+      }
+    });
+  }
+  
+  /**
+   * Inserts a button in a panel that will quickly fill in a form when clicked
+   * @function insertQuickFillinButton
+   * @param {object} parentElement - panel or element where the button will be added
+   * @param {string} content - Text inside the button
+   * @param {object} formData - JSON of name, value pairs to insert in the form
+   */
+  function insertQuickFillinButton(parentElement, content, formData) {
+    var quickBtn = loadElement("BUTTON", {"type": "button"}, content);
+    quickBtn.addEventListener("click", quickFormFillin.bind(this, formData));
+    parentElement.appendChild(quickBtn);
+    parentElement.appendChild(document.createElement("br"));
+  }
+  
+  /**
    * Builds the Query Helper panel
    * @function queryHelper
    * @param {string} url - url of the query service.
@@ -588,8 +623,8 @@
     });
     sidepanel.appendChild(closeButton);
     sidepanel.appendChild(loadElement("b", {}, "Query Helper"));
-	sidepanel.appendChild(document.createElement("br"));
-	
+    sidepanel.appendChild(document.createElement("br"));
+  
     var clearBtn = loadElement("BUTTON", {"type": "button", "style": "float: right;"}, "Clear");
     clearBtn.addEventListener("click", clearActive);
     sidepanel.appendChild(clearBtn);
@@ -618,9 +653,12 @@
     });
     sidepanel.appendChild(btns);
     
-	// add quick helpers
-	
-	
+    // add quick helpers
+    insertQuickFillinButton(sidepanel, "Select All", { where: "1=1", outFields: "*", returnGeometry: "true" });
+    insertQuickFillinButton(sidepanel, "Select All but Geometry", { where: "1=1", outFields: "*", returnGeometry: "false" });
+    insertQuickFillinButton(sidepanel, "Get Count Only", { where: "1=1", returnCountOnly: "true" });
+    insertQuickFillinButton(sidepanel, "Select Distinct", { where: "1=1", returnDistinctValues: "true", returnGeometry: "false"});
+  
     document.body.appendChild(sidepanel);
 
     // add events
@@ -646,8 +684,6 @@
           queryTest = /\/query\/?$/i,
           printTaskTest = /\/(execute|submitjob)\/?$/i,
           urls;
-        
-        
 
         // search for map service links on the page
         urls = tags.map(function (tag, i) {
@@ -699,7 +735,7 @@
         }
         
         // field and domain data counting.
-        if (/\d+\/?$/.test(url)) {
+        if (/(imageserver|\d+)\/?$/i.test(url)) {
           ajax(url + "?f=json", function (results) {
             if (results.fields && results.fields.length) {
               var fieldHTML = getFieldList(),
@@ -735,7 +771,6 @@
           });
         }
 
-        console.log("abouts to test print task");
         // handling print task and other 
         if (printTaskTest.test(url)) {
           ajax(url.replace(printTaskTest, "") + "?f=json", updateGPForm);
@@ -752,4 +787,5 @@
       }
     }, 10);
   });
+
 }());
