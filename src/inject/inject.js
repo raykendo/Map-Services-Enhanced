@@ -203,7 +203,7 @@
       if (data.hasOwnProperty("documentInfo")) {
         dF.appendChild(add("Max Record Count", data.maxRecordCount));
       }
-      if (data.hasOwnProperty("geometryType")) {
+      if (data.hasOwnProperty("geometryType") && data.geometryType) {
         dF.appendChild(add("Geometry", data.geometryType.replace("esriGeometry", "")));
       }
       if (data.definitionExpression) {
