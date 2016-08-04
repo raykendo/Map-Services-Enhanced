@@ -401,7 +401,7 @@
         if (response.count !== undefined && response.count !== null) {
           item.innerHTML =  ["<b>Features with values: </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(timeCheck),"</i>)"].join("");
         } else if (hasError) {
-          item = addSubList("Error getting count:", response.error, "error"));
+          item = addSubList("Error getting count:", response.error, "error");
         }
         resultList.appendChild(item);
         if (!hasError && field.type === "esriFieldTypeString") {
@@ -414,7 +414,7 @@
               if (response2.count !== undefined && response2.count !== null) {
                 item2.innerHTML = ["<b>Features without empty values: </b>", response2.count, (!response2.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(newTimeCheck),"</i>)"].join("");
               } else if (hasError) {
-                item2 = addSubList("Error getting non-empty values count:", response2.error, "error"));
+                item2 = addSubList("Error getting non-empty values count:", response2.error, "error");
               }
               resultList.appendChild(item2);
 
@@ -456,7 +456,7 @@
           if (response.count !== undefined && response.count !== null) {
             li.innerHTML = ["<b>", item.name, ": </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>" : "")].join("");
           } else if (hasError) {
-            li = addSubList("Error getting count:", response.error, "error"));
+            li = addSubList("Error getting count:", response.error, "error");
           }
           tr.appendChild(li);
           if (fields[0].length) {  
