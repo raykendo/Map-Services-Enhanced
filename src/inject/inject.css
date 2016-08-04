@@ -82,3 +82,8 @@
 .buttonbox > button {
     width: 23%;
 }
+.error {
+  color: #d00;
+  font-weight: bold;
+  background-color: #fcc;
+}
