@@ -37,14 +37,32 @@
   }
 
   /**
+   * Creates an HTML element.
+   * @function loadElement
+   * @param {string} tag - HTML tag name that you want to create.
+   * @param {object} attributes - name value object describing properties you want to assign to the object
+   * @param {string} [text] - if present, this is the content you shoul add to the HTML element.
+   */
+  function loadElement (tag, attributes, text) {
+    var el = document.createElement(tag), a;
+    for (a in attributes) {
+      el.setAttribute(a, attributes[a]);
+    }
+    if (text) {
+      el.innerHTML = text;
+    }
+    return el;
+  }
+
+  /**
    * Adds a list item to a node if the property is there and maybe if a property is true.
    * @function add
    * @param {string} title - text to add in bold
    * @param {string | function} content - data to add after title in regular format
    * @returns {object} - list item node;
    */
-  function add(title, content) {
-    var li = document.createElement("li");
+  function add(title, content, className) {
+    var li = loadElement("LI", {"class": className || ""});
     if (content === undefined) {
       li.innerHTML = ["<b>","</b>"].join(title);
     } else {
@@ -58,13 +76,13 @@
    * @function addSubList
    * @param {string} title - title of the list
    * @param {object} content - name, value pairs used to describe a feature.
+   * @param {string} [className] - if present, add this classname to the list item.
    * @returns {object} - list item node containing list of properties.
    */
-  function addSubList(title, content) {
-    var li = document.createElement("li"), 
+  function addSubList(title, content, className) {
+    var li = loadElement("LI", {"class": className || ""}, ["<b>",": </b>"].join(title)), 
       ul = document.createElement("ul"), 
       i;
-    li.innerHTML = ["<b>",": </b>"].join(title);
     for (i in content) {
       ul.appendChild(add(unCamelCase(i), content[i]));
     }
@@ -155,13 +173,10 @@
       ul = document.createElement("ul");
       div.appendChild(ul);
 
-	  if (data.hasOwnProperty("error") && data.error) {
-		var node = addSubList("Error", data.error);
-		node.className += " error";
-		dF.appendChild(node);
-	  }
+      if (data.hasOwnProperty("error") && data.error) {
+        dF.appendChild(addSubList("Error", data.error, "error"));
+      }
       if (data.hasOwnProperty("description") && data.description) {
-        //add("Description", data.description, true);
         dF.appendChild(add("Description", data.description));
       }
       if (data.hasOwnProperty("serviceDescription") && data.serviceDescription) {
@@ -194,7 +209,7 @@
       if (data.hasOwnProperty("extent")) {
         dF.appendChild(addSubList("Extent", data.extent));
       }
-      if (data.hasOwnProperty("units")) {
+      if (data.hasOwnProperty("units") && data.units) {
         dF.appendChild(add("Units", data.units.replace("esri", "")));              
       }
       if (data.hasOwnProperty("documentInfo")) {
@@ -277,7 +292,12 @@
 
     if (oid) {
       ajax(queryUrl.replace(/\+field\+/g, ["+","+"].join(oid) ), function (response) {
-        ul.appendChild(add("Number of features", response.count ));
+      	if (response.count !== undefined && response.count !== null) {
+      	  ul.appendChild(add("Number of features", response.count ));
+      	}
+        if (response.hasOwnProperty("error") && response.error) {
+          ul.appendChild(addSubList("Error", response.error, "error"));
+        }
       });
     } else {
       ul.appendChild(add("No way to query features."));
@@ -285,8 +305,13 @@
     
     if (shape) {
       ajax(queryUrl.replace(/\+field\+/g, ["+", "+"].join(shape)), function (response) {
-        ul.appendChild(add("Features with shapes", response.count ));
-      })
+      	if (response.count !== undefined && response.count !== null) {
+          ul.appendChild(add("Features with shapes", response.count ));
+      	}
+      	if (response.hasOwnProperty("error") && response.error) {
+          ul.appendChild(addSubList("Error", response.error, "error"));
+        }
+      });
     } else if (!/\/featureserver\//i.test(url) && (data.type && data.type !== "Table")) {
       ul.appendChild(add("No visible shape field available."));
     }
@@ -371,29 +396,38 @@
     ajax(url + params,
       function (response) {
         var item = document.createElement("li"),
+          hasError = response.hasOwnProperty("error") && !!response.error,
           newTimeCheck;
-        item.innerHTML =  ["<b>Features with values: </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(timeCheck),"</i>)"].join("");
+        if (response.count !== undefined && response.count !== null) {
+          item.innerHTML =  ["<b>Features with values: </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(timeCheck),"</i>)"].join("");
+        } else if (hasError) {
+          item = addSubList("Error getting count:", response.error, "error"));
+        }
         resultList.appendChild(item);
-        if (field.type === "esriFieldTypeString") {
+        if (!hasError && field.type === "esriFieldTypeString") {
           newTimeCheck = Date.now();
 
           ajax(url + "/query?where=not+field+is+null+and+field+<>%27%27&returnGeometry=false&returnCountOnly=true&f=json".replace(/field/g, field.name), 
             function (response2) {
-              var item2 = document.createElement("li");
-              item2.innerHTML = ["<b>Features without empty values: </b>", response2.count, (!response2.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(newTimeCheck),"</i>)"].join("");
-
+              var item2 = document.createElement("li"),
+                hasError = response2.hasOwnProperty("error") && !!response2.error;
+              if (response2.count !== undefined && response2.count !== null) {
+                item2.innerHTML = ["<b>Features without empty values: </b>", response2.count, (!response2.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(newTimeCheck),"</i>)"].join("");
+              } else if (hasError) {
+                item2 = addSubList("Error getting non-empty values count:", response2.error, "error"));
+              }
               resultList.appendChild(item2);
 
               if (fields.length) {
                 checkForNulls(url, fields, nodes);
               }
-            });
-
-        } else   if (fields.length) {  
+            }
+          );
+        } else if (fields.length) {  
           checkForNulls(url, fields, nodes); 
         }
       }
-  );
+    );
   }
 
   /**
@@ -417,8 +451,13 @@
       params = "/query?where=field+%3D+value&returnGeometry=false&returnCountOnly=true&f=json".replace("field", item.field).replace("value", value);
       ajax(url + params,
         function (response) {
-          var li = document.createElement("li");
-          li.innerHTML = ["<b>", item.name, ": </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>" : "")].join("");
+          var li = document.createElement("li"),
+            hasError = response.hasOwnProperty("error") && !!response.error;
+          if (response.count !== undefined && response.count !== null) {
+            li.innerHTML = ["<b>", item.name, ": </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>" : "")].join("");
+          } else if (hasError) {
+            li = addSubList("Error getting count:", response.error, "error"));
+          }
           tr.appendChild(li);
           if (fields[0].length) {  
             checkDomains(url, fields, nodes, tr); 
@@ -443,24 +482,6 @@
   }
 
   /**
-   * Creates an HTML element.
-   * @function loadElement
-   * @param {string} tag - HTML tag name that you want to create.
-   * @param {object} attributes - name value object describing properties you want to assign to the object
-   * @param {string} [text] - if present, this is the content you shoul add to the HTML element.
-   */
-  function loadElement (tag, attributes, text) {
-    var el = document.createElement(tag), a;
-    for (a in attributes) {
-      el.setAttribute(a, attributes[a]);
-    }
-    if (text) {
-      el.innerHTML = text;
-    }
-    return el;
-  }
-
-  /**
    * Creates a button with the entered text.
    * @function createButton
    * @param {string} text - text you want to insert within the button.
@@ -468,7 +489,6 @@
   function createButton(text) {
     return loadElement("BUTTON", {"type": "button"}, text);
   }
-
 
   function swapInChoice(nodes, param) {
     if (!param.choiceList) {
