@@ -28,13 +28,19 @@
     border: 0;
 }
 
+.sidepanel,
+.buttonbox {
+    display: flex;
+    flex-flow: row wrap;
+}
+
 .sidepanel {
     position: fixed;
     left: auto;
     right: 0.5em;
-    width: 35%;
+    width: 30%;
     top: 5em;
-    bottom: 5em;
+    /* bottom: 5em; */
     border: 1px solid #669;;
     border-radius: 5px 0 0 5px;
     background: white;
@@ -43,12 +49,36 @@
     padding: 0.3em;
 }
 
+.titlepanel {
+    width: 100%;
+    display: inline-flex;
+    justify-content: space-between;
+}
+
+.titlepanel b {
+    margin: 0.5em 0 0.8em;
+}
+
 .sidepanel button {
+    font-size: 1.0em;
     border: 0;
     border-radius: 4px;
-    padding: 0.25em 0.5em;
+    padding: 0.5em 0.8em;
+    margin:  0.2em 0.4em 0.2em 0;
     background-color: #336;
     color: White;
     font-weight: bold;
     z-index: 100;
+}
+
+.sidepanel select {
+    width: 100%;
+}
+
+.buttonbox {
+    justify-content: flex-start;
+    align-content: space-between;
+}
+.buttonbox > button {
+    width: 23%;
 }

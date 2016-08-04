@@ -150,8 +150,7 @@
     var dF = document.createDocumentFragment(),
       ul, div;
     if (data) {
-      div = document.createElement("div");
-      div.className = "datablock collapsed";
+      div = loadElement("DIV", {"class": "datablock collapsed"});
       div.appendChild(document.createElement("br"));
       ul = document.createElement("ul");
       div.appendChild(ul);
@@ -617,23 +616,21 @@
    */
   function queryHelper(url, data) {
     var sidepanel = loadElement("DIV", {"class": "sidepanel"}),
-      closeButton = loadElement("BUTTON", {"style": "float:right;"}, "Close"),
-      fieldSelect = loadElement("SELECT", {"size": "10", "title": "Double-click to add to form."}),
-      valueList = loadElement("SELECT", {"size": "10", "title": "Double-click to add to form."}),
-      btns = document.createElement("div");
+      titlepanel = loadElement("DIV", {"class": "titlepanel"}),
+      fieldSelect = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."}),
+      valueList = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."}),
+      btns = loadElement("DIV", {"class": "buttonbox"});
     // set up side panel
-    
-    closeButton.addEventListener("click", function (evt) {
-      evt.target.parentNode.parentNode.removeChild(evt.target.parentNode);
-    });
-    sidepanel.appendChild(closeButton);
-    sidepanel.appendChild(loadElement("b", {}, "Query Helper"));
-    sidepanel.appendChild(document.createElement("br"));
-  
-    var clearBtn = loadElement("BUTTON", {"type": "button", "style": "float: right;"}, "Clear");
+
+
+    titlepanel.appendChild(loadElement("b", {}, "Query Helper"));
+    var clearBtn = loadElement("BUTTON", {"type": "button"}, "Clear");
     clearBtn.addEventListener("click", clearActive);
-    sidepanel.appendChild(clearBtn);
-    
+    titlepanel.appendChild(clearBtn);
+
+    sidepanel.appendChild(titlepanel);
+    sidepanel.appendChild(loadElement("P", {}, "Click field name to get up to 1000 examples. Double-click selections to add to form."))
+  
     data.fields.forEach(function (field) {
       fieldSelect.appendChild(loadElement("OPTION", {"value": field.name}, field.alias));  
     });
@@ -641,17 +638,18 @@
     sidepanel.appendChild(valueList);
     fieldSelect.addEventListener("change", function () {
       var val = fieldSelect.value;
+      valueList.innerHTML = "";
       ajax(url + "?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), function (res) {
-        valueList.innerHTML = [].map.call(res.features, function (feature) {
-          var feature_value = isNaN(feature.attributes[val] * 1) ? "'" + feature.attributes[val] + "'" : feature.attributes[val];
-          var feature_text = feature.attributes[val];
-          return ["<option value=\"", feature_value, "\">", feature_text, "</option>"].join("");
+        res.features.forEach(function (feature) {
+          var featureValue =  isNaN(feature.attributes[val] * 1) ? "'{0}'".replace("{0}", feature.attributes[val]) : feature.attributes[val];
+          valueList.appendChild(loadElement("option", {"value": featureValue}, feature.attributes[val]));
         });
       });
     });
-    [" = ", " &lt;&gt; ", " LIKE ", " &gt; ", " &gt;= ", " AND ", " &lt; ", " &lt;= ", " OR ", "_", "%", "()", "NOT ", " IS ", "*", "&#39;&#39;", " IN ", ", " ].forEach(function (txt) {
+    //[" = ", " &lt;&gt; ", " LIKE ", " &gt; ", " &gt;= ", " AND ", " &lt; ", " &lt;= ", " OR ", "_", "%", "()", "NOT ", " IS ", "*", "&#39;&#39;", " IN ", ", " ].forEach(function (txt) {
+    [" = ", " <> ", " LIKE ", " > ", " >= ", " AND ", " < ", " <= ", " OR ", "_", "%", "()", "NOT ", " IS ", "*", "''", " IN ", ", " ].forEach(function (txt) {
       btns.appendChild(loadElement("button", {
-        "className": "sql",
+        "class": "sql",
         "type": "button",
         "name": txt
       }, txt.replace(/\s+/g, "")));
@@ -674,6 +672,7 @@
       setActive(evt.currentTarget.value);
     });
     listenAll(sidepanel, "button.sql", "click", function (evt) {
+      //setActive(decodeURIComponent(evt.currentTarget.name));
       setActive(evt.currentTarget.name);
     });
   }
