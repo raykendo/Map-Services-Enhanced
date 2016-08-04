@@ -722,8 +722,8 @@
                 tags[data.i].parentNode.appendChild(metadata);
               }
               
-              // if url is a map service layer, query for number of features && number of features with shapes
-              if (/server\/\d+\/?$/i.test(data.url)) {
+              // if the service has fields, get the layer count
+              if (response.fields && response.fields.length) {
                 getLayerCount(data.url, response, function (countList) {
                   tags[data.i].parentNode.appendChild(countList);
                 });
