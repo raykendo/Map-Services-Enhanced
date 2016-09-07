@@ -166,6 +166,7 @@
    */
   function showMetadata(data) {
     var dF = document.createDocumentFragment(),
+      boolPreCheck = ["defaultVisibility", "isDataVersioned"],
       ul, div;
     if (data) {
       div = loadElement("DIV", {"class": "datablock collapsed"});
@@ -185,9 +186,11 @@
       if (data.hasOwnProperty("copyrightText") && data.copyrightText) {
         dF.appendChild(add("&copy;", data.copyrightText));
       }
+      /*
       if (data.hasOwnProperty("supportsDynamicLayers") && data.supportsDynamicLayers) {
         dF.appendChild(add("Supports Dynamic Layers"));
       }
+      */
       if (data.hasOwnProperty("layers")) {
         dF.appendChild(add("# Layers", data.layers.length));
       }
@@ -227,23 +230,59 @@
       if (data.hasOwnProperty("defaultVisibility")) {
         dF.appendChild(add("Visible by default", data.defaultVisibility.toString()));
       }
+      if (data.hasOwnProperty("displayField") && data.displayField) {
+        dF.appendChild(add("Display Field", data.displayField));
+      }
+      if (data.hasOwnProperty("objectIdField") && data.objectIdField) {
+        dF.appendChild(add("Object ID Field", data.objectIdField));
+      }
+      if (data.hasOwnProperty("globalIdField") && data.globalIdField) {
+        dF.appendChild(add("Global ID Field", data.globalIdField));
+      }
+      
+      /*
       if (data.hasAttachments) {
         dF.appendChild(add("Has Attachments"));
       }
+      */
+      /*
       if (data.hasLabels) {
         dF.appendChild(add("Has Labels"));
       }
+      */
+      /*
       if (data.supportsStatistics) {
         dF.appendChild(add("Supports Statistics"));
       }
+      */
+      /*
       if (data.supportsAdvancedQueries) {
         dF.appendChild(add("Supports Advanced Queries"));
       }
+      */
       if (data.relationships && data.relationships.length) {
         dF.appendChild(add("Has Relationships"));
       }
       if (data.hasOwnProperty("isDataVersioned")) {
         dF.appendChild(add("Versioned Data", data.isDataVersioned ? "Yes" : "No"));
+      }
+
+      if (data.dateFieldsTimeReference) {
+        dF.appendChild(add("Date fields Time Zone", data.dateFieldsTimeReference.timeZone + "(Daylight Savings Time " + (data.dateFieldsTimeReference.respectsDaylightSaving ? "" : "not ") + "supported)"))
+      }
+
+      if (data.hasOwnProperty("supportedQueryFormats")) {
+        dF.appendChild(add("Supported Query Formats", data.supportedQueryFormats ));
+      }
+      if (data.advancedQueryCapabilities) {
+        dF.appendChild(addSubList("Advanced Query Capabilities", data.advancedQueryCapabilities));
+      }
+
+      // show all data items where true, unless formatted value already available.
+      for (var item in data) {
+        if (typeof data[item] === "boolean" && data[item] && boolPreCheck.indexOf(item) === -1) {
+          df.appendChild(add(unCamelCase(item)));
+        }
       }
       
       ul.appendChild(dF);
