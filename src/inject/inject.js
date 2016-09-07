@@ -627,7 +627,53 @@
     parentElement.appendChild(quickBtn);
     parentElement.appendChild(document.createElement("br"));
   }
+
+  /**
+   * Adds a statistic option to the outStatistics blank.
+   * @function addStatistic
+   * @param {string} statisticType - statistic type to collect from the service
+   * @returns {string}
+   */
+  function addStatistic(statisticType) {
+    if (!active || active.name !== "outStatistics") {
+      return;
+    }
+    var activeText = active.value,
+      statContent = [];
+    if (activeText.length) {
+      try {
+        statContent = JSON.parse(activeText);
+        if (!(statContent instanceof Array)) {
+          throw "Not a valid array";
+        }
+      } catch(err) {
+        statContent = [];
+      }
+    }
+
+    statContent.push({
+      "statisticType": statisticType,
+      "onStatisticField": "",
+      "outStatisticFieldName": ""
+    });
+
+    active.value = JSON.stringify(statContent);
+    return active.value;
+  }
   
+  /**
+   * Inserts a button in a panel that will insert statistics in a field.
+   * @function insertStatisticsButton
+   * @param {object} parentElement - panel or element where the button will be added
+   * @param {string} content - Text inside the button
+   * @param {object} formData - JSON of name, value pairs to insert in the form
+   */
+  function insertStatisticsButton(parentElement, content, statisticType) {
+    var btn = loadElement("BUTTON", {"type":"button", "class": "statistic", "style": "display:none;"}, content);
+    btn.addEventListener("click", addStatistic.bind(this, statisticType));
+    parentElement.appendChild(btn);
+  }
+
   /**
    * Builds the Query Helper panel
    * @function queryHelper
@@ -676,17 +722,34 @@
     });
     sidepanel.appendChild(btns);
     
+    ["Count", "Sum", "Min", "Max", "Avg", "StdDev", "Var"].forEach(function (stat) {
+      insertStatisticsButton(sidepanel, stat, stat.toLowerCase());
+    });
+
     // add quick helpers
     insertQuickFillinButton(sidepanel, "Select All", { where: "1=1", outFields: "*", returnGeometry: "true" });
     insertQuickFillinButton(sidepanel, "Select All but Geometry", { where: "1=1", outFields: "*", returnGeometry: "false" });
-    insertQuickFillinButton(sidepanel, "Get Count Only", { where: "1=1", returnCountOnly: "true" });
+    insertQuickFillinButton(sidepanel, "Get Count Only", { where: "1=1", returnDistinctValues: "false", returnCountOnly: "true", returnGeometry: "false" });
     insertQuickFillinButton(sidepanel, "Select Distinct", { where: "1=1", returnDistinctValues: "true", returnGeometry: "false"});
   
     document.body.appendChild(sidepanel);
 
     // add events
     listenAll(document, "input[type=text], textarea", "blur", function () { 
-      active = this; 
+      var buttonNodes, i, il;
+      active = this;
+      
+      // show/hide statistic buttons
+      buttonNodes = document.querySelectorAll(".statistic");
+      il = buttonNodes.length;
+      for (i = 0; i < il; i++) {
+        if (active && active.name && active.name === "outStatistics") {
+          buttonNodes[i].style.display = "inline-block";
+        } else {
+          buttonNodes[i].style.display = "none";
+        }
+      }
+      
     });
     listenAll(sidepanel, "select", "dblclick", function (evt) {
       setActive(evt.currentTarget.value);
