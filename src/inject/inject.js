@@ -856,6 +856,14 @@
             });
         }
 
+        chrome.storage.sync.get({
+          autoMetadata: true
+        }, function(items) {
+          if (urls && urls.length && items.autoMetadata) {
+            collectData(urls);
+          }
+        });
+
         if (urls && urls.length) {
           collectData(urls);
         }
@@ -867,32 +875,39 @@
               var fieldHTML = getFieldList(),
                 domainFields, domainFieldHTML;
 
-              checkForNulls(url, results.fields.slice(0), fieldHTML.slice(0));
+              chrome.storage.sync.get({
+                autoFeatureCounts: true,
+                autoDomainCounts: true
+              }, function(items) {
+                if (items.autoFeatureCounts) {
+                  checkForNulls(url, results.fields.slice(0), fieldHTML.slice(0));
+                }
+                if (items.autoDomainCounts && results.fields.some(hasDomainTest)) {
+                  domainFields = [];
+                  domainFieldHTML = fieldHTML.slice(0);
 
-              if (results.fields.some(hasDomainTest)) {
-                domainFields = [];
-                domainFieldHTML = fieldHTML.slice(0);
+                  results.fields.forEach(function (field, i) {
+                    if (hasDomainTest(field)) {
+                      domainFields.push(field.domain.codedValues.map(function (item) {
+                        // future reference: check if Object.assign supported by Chrome
+                        item.field = field.name;
+                        item.type = field.type;
+                        return item;
+                      }));
+                    } else {
+                      domainFieldHTML[i] = null
+                    }
+                  });
 
-                results.fields.forEach(function (field, i) {
-                  if (hasDomainTest(field)) {
-                    domainFields.push(field.domain.codedValues.map(function (item) {
-                      // future reference: check if Object.assign supported by Chrome
-                      item.field = field.name;
-                      item.type = field.type;
-                      return item;
-                    }));
-                  } else {
-                    domainFieldHTML[i] = null
-                  }
-                });
+                  // filter out nulled out HTML nodes.
+                  domainFieldHTML = domainFieldHTML.filter(function (item) {
+                    return !!item;
+                  });
 
-                // filter out nulled out HTML nodes.
-                domainFieldHTML = domainFieldHTML.filter(function (item) {
-                  return !!item;
-                });
+                  checkDomains(url, domainFields, domainFieldHTML, null);
+                }
+              });
 
-                checkDomains(url, domainFields, domainFieldHTML, null);
-              }
             }
           });
         }
