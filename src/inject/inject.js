@@ -281,7 +281,7 @@
       // show all data items where true, unless formatted value already available.
       for (var item in data) {
         if (typeof data[item] === "boolean" && data[item] && boolPreCheck.indexOf(item) === -1) {
-          df.appendChild(add(unCamelCase(item)));
+          dF.appendChild(add(unCamelCase(item)));
         }
       }
       
@@ -775,21 +775,24 @@
 
     // add events
     listenAll(document, "input[type=text], textarea", "blur", function () { 
-      var buttonNodes, i, il;
       active = this;
-      
-      // show/hide statistic buttons
+    });
+
+    // show/hide buttons
+    listenAll(document,  "input[type=text], textarea", "focus", function () {
+      var buttonNodes, i, il;
+
       buttonNodes = document.querySelectorAll(".statistic");
       il = buttonNodes.length;
       for (i = 0; i < il; i++) {
-        if (active && active.name && active.name === "outStatistics") {
+        if (this && this.name && this.name === "outStatistics") {
           buttonNodes[i].style.display = "inline-block";
         } else {
           buttonNodes[i].style.display = "none";
         }
       }
-      
     });
+
     listenAll(sidepanel, "select", "dblclick", function (evt) {
       setActive(evt.currentTarget.value);
     });

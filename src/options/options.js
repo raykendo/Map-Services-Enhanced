@@ -1,7 +1,5 @@
 // Saves options to chrome.storage
 function save_options() {
-  var color = document.getElementById('color').value;
-
   chrome.storage.sync.set({
     autoMetadata: document.getElementById('metadata').checked,
     autoFeatureCounts: document.getElementById('featurecounts').checked,
