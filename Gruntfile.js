@@ -51,4 +51,5 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-compress');
 
     grunt.registerTask('default', ["eslint", "sync", 'uglify', "compress"]);
+    grunt.registerTask('forTesting', ['eslint', 'sync']);
 };
