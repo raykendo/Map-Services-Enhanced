@@ -1,6 +1,6 @@
 {
   "name": "map-services-enhanced",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A Chrome extension to work with ArcGIS Server",
   "author": "Ken Doman <raykendo@gmail.com>",
   "repository": {

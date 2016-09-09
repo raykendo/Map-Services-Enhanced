@@ -56,19 +56,20 @@
 
   /**
    * Adds a list item to a node if the property is there and maybe if a property is true.
-   * @function add
+   * @function li
    * @param {string} title - text to add in bold
-   * @param {string | function} content - data to add after title in regular format
+   * @param {string | object} content - data to add after title in regular format
+   * @param {string} [className] - if prsent, adds the class name to the list item
    * @returns {object} - list item node;
    */
-  function add(title, content, className) {
-    var li = loadElement("LI", {"class": className || ""});
+  function li(title, content, className) {
+    var node = loadElement("LI", {"class": className || ""});
     if (content === undefined) {
-      li.innerHTML = ["<b>","</b>"].join(title);
+      node.innerHTML = ["<b>","</b>"].join(title);
     } else {
-      li.innerHTML = ["<b>", title, ": </b>", (content instanceof Object ? JSON.stringify(content) : content)].join("");
+      node.innerHTML = ["<b>", title, ": </b>", (content instanceof Object ? JSON.stringify(content) : content)].join("");
     }
-    return li;
+    return node;
   }
 
   /**
@@ -76,18 +77,18 @@
    * @function addSubList
    * @param {string} title - title of the list
    * @param {object} content - name, value pairs used to describe a feature.
-   * @param {string} [className] - if present, add this classname to the list item.
+   * @param {string} [className] - if present, add this class name to the list item.
    * @returns {object} - list item node containing list of properties.
    */
   function addSubList(title, content, className) {
-    var li = loadElement("LI", {"class": className || ""}, ["<b>",": </b>"].join(title)), 
+    var node = loadElement("LI", {"class": className || ""}, ["<b>",": </b>"].join(title)), 
       ul = document.createElement("ul"), 
       i;
     for (i in content) {
-      ul.appendChild(add(unCamelCase(i), content[i]));
+      ul.appendChild(li(unCamelCase(i), content[i]));
     }
-    li.appendChild(ul);
-    return li;
+    node.appendChild(ul);
+    return node;
   }
 
   /**
@@ -177,7 +178,7 @@
 
     switch(codeNumber) {
       case -2147220985:
-        return add("Cannot count features with valid shape fields in a shapefile");
+        return li("Cannot count features with valid shape fields in a shapefile");
     }
 
     return addSubList("Error", err0r, "error");
@@ -205,30 +206,25 @@
       }
 
       if (data.hasOwnProperty("description") && data.description) {
-        dF.appendChild(add("Description", data.description));
+        dF.appendChild(li("Description", data.description));
       }
       if (data.hasOwnProperty("serviceDescription") && data.serviceDescription) {
-        dF.appendChild(add("Service Description", data.serviceDescription));
+        dF.appendChild(li("Service Description", data.serviceDescription));
       }
       if (data.hasOwnProperty("copyrightText") && data.copyrightText) {
-        dF.appendChild(add("&copy;", data.copyrightText));
+        dF.appendChild(li("&copy;", data.copyrightText));
       }
-      /*
-      if (data.hasOwnProperty("supportsDynamicLayers") && data.supportsDynamicLayers) {
-        dF.appendChild(add("Supports Dynamic Layers"));
-      }
-      */
       if (data.hasOwnProperty("layers")) {
-        dF.appendChild(add("# Layers", data.layers.length));
+        dF.appendChild(li("# Layers", data.layers.length));
       }
       if (data.hasOwnProperty("tables") && data.tables.length) {
-        dF.appendChild(add("# Tables", data.tables.length));
+        dF.appendChild(li("# Tables", data.tables.length));
       }
       if (data.hasOwnProperty("minScale")) {
-        dF.appendChild(add("Min Scale", data.minScale || "None"));
+        dF.appendChild(li("Min Scale", data.minScale || "None"));
       }
       if (data.hasOwnProperty("maxScale")) {
-        dF.appendChild(add("Max Scale", data.maxScale || "None"));
+        dF.appendChild(li("Max Scale", data.maxScale || "None"));
       }
       if (data.hasOwnProperty("initialExtent")) {
         dF.appendChild(addSubList("Initial Extent", data.initialExtent));
@@ -240,66 +236,46 @@
         dF.appendChild(addSubList("Extent", data.extent));
       }
       if (data.hasOwnProperty("units") && data.units) {
-        dF.appendChild(add("Units", data.units.replace("esri", "")));              
+        dF.appendChild(li("Units", data.units.replace("esri", "")));              
       }
       if (data.hasOwnProperty("documentInfo")) {
         dF.appendChild(addSubList("Document Info", data.documentInfo));
       }
       if (data.hasOwnProperty("documentInfo")) {
-        dF.appendChild(add("Max Record Count", data.maxRecordCount));
+        dF.appendChild(li("Max Record Count", data.maxRecordCount));
       }
       if (data.hasOwnProperty("geometryType") && data.geometryType) {
-        dF.appendChild(add("Geometry", data.geometryType.replace("esriGeometry", "")));
+        dF.appendChild(li("Geometry", data.geometryType.replace("esriGeometry", "")));
       }
       if (data.definitionExpression) {
-          dF.appendChild(add("Definition Expression", data.definitionExpression));
+          dF.appendChild(li("Definition Expression", data.definitionExpression));
       }
       if (data.hasOwnProperty("defaultVisibility")) {
-        dF.appendChild(add("Visible by default", data.defaultVisibility.toString()));
+        dF.appendChild(li("Visible by default", data.defaultVisibility.toString()));
       }
       if (data.hasOwnProperty("displayField") && data.displayField) {
-        dF.appendChild(add("Display Field", data.displayField));
+        dF.appendChild(li("Display Field", data.displayField));
       }
       if (data.hasOwnProperty("objectIdField") && data.objectIdField) {
-        dF.appendChild(add("Object ID Field", data.objectIdField));
+        dF.appendChild(li("Object ID Field", data.objectIdField));
       }
       if (data.hasOwnProperty("globalIdField") && data.globalIdField) {
-        dF.appendChild(add("Global ID Field", data.globalIdField));
+        dF.appendChild(li("Global ID Field", data.globalIdField));
       }
       
-      /*
-      if (data.hasAttachments) {
-        dF.appendChild(add("Has Attachments"));
-      }
-      */
-      /*
-      if (data.hasLabels) {
-        dF.appendChild(add("Has Labels"));
-      }
-      */
-      /*
-      if (data.supportsStatistics) {
-        dF.appendChild(add("Supports Statistics"));
-      }
-      */
-      /*
-      if (data.supportsAdvancedQueries) {
-        dF.appendChild(add("Supports Advanced Queries"));
-      }
-      */
       if (data.relationships && data.relationships.length) {
-        dF.appendChild(add("Has Relationships"));
+        dF.appendChild(li("Has Relationships"));
       }
       if (data.hasOwnProperty("isDataVersioned")) {
-        dF.appendChild(add("Versioned Data", data.isDataVersioned ? "Yes" : "No"));
+        dF.appendChild(li("Versioned Data", data.isDataVersioned ? "Yes" : "No"));
       }
 
       if (data.dateFieldsTimeReference) {
-        dF.appendChild(add("Date fields Time Zone", data.dateFieldsTimeReference.timeZone + "(Daylight Savings Time " + (data.dateFieldsTimeReference.respectsDaylightSaving ? "" : "not ") + "supported)"))
+        dF.appendChild(li("Date fields Time Zone", data.dateFieldsTimeReference.timeZone + "(Daylight Savings Time " + (data.dateFieldsTimeReference.respectsDaylightSaving ? "" : "not ") + "supported)"))
       }
 
       if (data.hasOwnProperty("supportedQueryFormats")) {
-        dF.appendChild(add("Supported Query Formats", data.supportedQueryFormats ));
+        dF.appendChild(li("Supported Query Formats", data.supportedQueryFormats ));
       }
       if (data.advancedQueryCapabilities) {
         dF.appendChild(addSubList("Advanced Query Capabilities", data.advancedQueryCapabilities));
@@ -308,7 +284,7 @@
       // show all data items where true, unless formatted value already available.
       for (var item in data) {
         if (typeof data[item] === "boolean" && data[item] && boolPreCheck.indexOf(item) === -1) {
-          dF.appendChild(add(unCamelCase(item)));
+          dF.appendChild(li(unCamelCase(item)));
         }
       }
       
@@ -359,27 +335,27 @@
     if (oid) {
       ajax(queryUrl.replace(/\+field\+/g, ["+","+"].join(oid) ), function (response) {
       	if (response.count !== undefined && response.count !== null) {
-      	  ul.appendChild(add("Number of features", response.count ));
+      	  ul.appendChild(li("Number of features", response.count ));
       	}
         if (response.hasOwnProperty("error") && response.error) {
           ul.appendChild(reportError(response.error));
         }
       });
     } else {
-      ul.appendChild(add("No way to query features."));
+      ul.appendChild(li("No way to query features."));
     }
     
     if (shape) {
       ajax(queryUrl.replace(/\+field\+/g, ["+", "+"].join(shape)), function (response) {
       	if (response.count !== undefined && response.count !== null) {
-          ul.appendChild(add("Features with shapes", response.count ));
+          ul.appendChild(li("Features with shapes", response.count ));
       	}
       	if (response.hasOwnProperty("error") && response.error) {
           ul.appendChild(reportError(response.error));
         }
       });
     } else if (!/\/featureserver\//i.test(url) && (data.type && data.type !== "Table")) {
-      ul.appendChild(add("No visible shape field available."));
+      ul.appendChild(li("No visible shape field available."));
     }
 
     cb(ul);
@@ -517,14 +493,14 @@
       params = "/query?where=field+%3D+value&returnGeometry=false&returnCountOnly=true&f=json".replace("field", item.field).replace("value", value);
       ajax(url + params,
         function (response) {
-          var li = document.createElement("li"),
+          var node = document.createElement("li"),
             hasError = response.hasOwnProperty("error") && !!response.error;
           if (response.count !== undefined && response.count !== null) {
-            li.innerHTML = ["<b>", item.name, ": </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>" : "")].join("");
+            node.innerHTML = ["<b>", item.name, ": </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>" : "")].join("");
           } else if (hasError) {
-            li = reportError(response.error);
+            node = reportError(response.error);
           }
-          tr.appendChild(li);
+          tr.appendChild(node);
           if (fields[0].length) {  
             checkDomains(url, fields, nodes, tr); 
           } else {
@@ -823,7 +799,6 @@
       setActive(evt.currentTarget.value);
     });
     listenAll(sidepanel, "button.sql", "click", function (evt) {
-      //setActive(decodeURIComponent(evt.currentTarget.name));
       setActive(evt.currentTarget.name);
     });
   }
@@ -834,7 +809,7 @@
         clearInterval(readyStateCheckInterval);
 
         // collect the links on the web page to collect information about the content they link to.
-        var  tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0),
+        var tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0),
           url = window.location.href.split("?")[0],
           queryTest = /\/query\/?$/i,
           printTaskTest = /\/(execute|submitjob)\/?$/i,
@@ -892,10 +867,6 @@
             collectData(urls);
           }
         });
-
-        if (urls && urls.length) {
-          collectData(urls);
-        }
         
         // field and domain data counting.
         if (/(imageserver|\d+)\/?$/i.test(url)) {
