@@ -158,6 +158,31 @@
     
     return container;
   }
+
+  /**
+   * Error reporting
+   * @function reportError
+   * @param {error} err0r - error object returned.
+   * @returns {object} an HTML node containing the error message.
+   */
+  function reportError(err0r) {
+    var codeNumber = -99999;
+    
+    if (err0r.hasOwnProperty("code")) {
+      codeNumber = err0r.code;
+    }
+    if (err0r.hasOwnProperty("Code")) {
+      codeNumber = err0r.Code;
+    }
+
+    switch(codeNumber) {
+      case -2147220985:
+        return add("Cannot count features with valid shape fields in a shapefile");
+    }
+
+    return addSubList("Error", err0r, "error");
+  }
+
   /**
    * Creates a nested list to show service and layer metadata
    * @function showMetadata
@@ -167,16 +192,18 @@
   function showMetadata(data) {
     var dF = document.createDocumentFragment(),
       boolPreCheck = ["defaultVisibility", "isDataVersioned"],
-      ul, div;
+      errMessage, ul, div;
     if (data) {
       div = loadElement("DIV", {"class": "datablock collapsed"});
       div.appendChild(document.createElement("br"));
       ul = document.createElement("ul");
       div.appendChild(ul);
 
+      // handling errors
       if (data.hasOwnProperty("error") && data.error) {
-        dF.appendChild(addSubList("Error", data.error, "error"));
+        dF.appendChild(reportError(data.error));
       }
+
       if (data.hasOwnProperty("description") && data.description) {
         dF.appendChild(add("Description", data.description));
       }
@@ -335,7 +362,7 @@
       	  ul.appendChild(add("Number of features", response.count ));
       	}
         if (response.hasOwnProperty("error") && response.error) {
-          ul.appendChild(addSubList("Error", response.error, "error"));
+          ul.appendChild(reportError(response.error));
         }
       });
     } else {
@@ -348,7 +375,7 @@
           ul.appendChild(add("Features with shapes", response.count ));
       	}
       	if (response.hasOwnProperty("error") && response.error) {
-          ul.appendChild(addSubList("Error", response.error, "error"));
+          ul.appendChild(reportError(response.error));
         }
       });
     } else if (!/\/featureserver\//i.test(url) && (data.type && data.type !== "Table")) {
@@ -436,11 +463,11 @@
       function (response) {
         var item = document.createElement("li"),
           hasError = response.hasOwnProperty("error") && !!response.error,
-          newTimeCheck;
+          newTimeCheck, errMessage;
         if (response.count !== undefined && response.count !== null) {
           item.innerHTML =  ["<b>Features with values: </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(timeCheck),"</i>)"].join("");
         } else if (hasError) {
-          item = addSubList("Error getting count:", response.error, "error");
+          item = reportError(response.error);
         }
         resultList.appendChild(item);
         if (!hasError && field.type === "esriFieldTypeString") {
@@ -453,7 +480,7 @@
               if (response2.count !== undefined && response2.count !== null) {
                 item2.innerHTML = ["<b>Features without empty values: </b>", response2.count, (!response2.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(newTimeCheck),"</i>)"].join("");
               } else if (hasError) {
-                item2 = addSubList("Error getting non-empty values count:", response2.error, "error");
+                item2 = reportError(response2.error);
               }
               resultList.appendChild(item2);
 
@@ -495,7 +522,7 @@
           if (response.count !== undefined && response.count !== null) {
             li.innerHTML = ["<b>", item.name, ": </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>" : "")].join("");
           } else if (hasError) {
-            li = addSubList("Error getting count:", response.error, "error");
+            li = reportError(response.error);
           }
           tr.appendChild(li);
           if (fields[0].length) {  
@@ -551,7 +578,6 @@
 
   function updateGPForm(response) {
     var myForm, blanks = [], b;
-    console.log("response:::", response);
     if (!response.parameters) {
       alert("Could not find GP parameters for this task.");
       return;
