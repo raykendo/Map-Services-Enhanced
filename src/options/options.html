@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html>
-<head><title>Map Services Enhanced Options</title></head>
+<head>
+  <title>Map Services Enhanced Options</title>
+  <style>
+    textarea {
+      display: block;
+      width: 100%;
+    }
+  </style>
+</head>
 <body>
 
 <fieldset>
@@ -25,6 +33,12 @@
   Auto-collect domain counts on page load.
 </label>
 
+</fieldset>
+
+<fieldset>
+<legend>Print Task</legend>
+<label for="defaultwebmapasjson">Default Print Task WebMapAsJSON</label>
+<textarea rows="5" id="defaultwebmapasjson"></textarea>
 </fieldset>
 
 <div id="status"></div>

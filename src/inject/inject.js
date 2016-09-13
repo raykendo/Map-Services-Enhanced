@@ -562,9 +562,11 @@
       response.parameters.forEach(swapInChoice.bind(this, blanks));
       blanks.some(function (blank) {
         if (blank.name === "Web_Map_as_JSON") {
-          if (window.confirm("Do you want to add a default Web Map as JSON?")) {
-            blank.value = "{\"operationalLayers\":[],\"baseMap\":{\"baseMapLayers\":[{\"id\":\"defaultBasemap\",\"opacity\":1,\"visibility\":true,\"url\":\"http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer\"}],\"title\":\"Topographic\"},\"exportOptions\":{\"dpi\":300,\"outputSize\":[1280,1024]}}";
-          }
+          chrome.storage.sync.get({
+            defaultWebMapAsJSON: ""
+          }, function(items) {
+            blank.value = blank.value || items.defaultWebMapAsJSON;
+          });
         }
         return blank.name === "Web_Map_as_JSON";
       });
