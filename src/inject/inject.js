@@ -177,8 +177,8 @@
     }
 
     switch(codeNumber) {
-      case -2147220985:
-        return li("Cannot count features with valid shape fields in a shapefile");
+    case -2147220985:
+      return li("Cannot count features with valid shape fields in a shapefile");
     }
 
     return addSubList("Error", err0r, "error");
@@ -193,7 +193,7 @@
   function showMetadata(data) {
     var dF = document.createDocumentFragment(),
       boolPreCheck = ["defaultVisibility", "isDataVersioned"],
-      errMessage, ul, div;
+      ul, div;
     if (data) {
       div = loadElement("DIV", {"class": "datablock collapsed"});
       div.appendChild(document.createElement("br"));
@@ -248,7 +248,7 @@
         dF.appendChild(li("Geometry", data.geometryType.replace("esriGeometry", "")));
       }
       if (data.definitionExpression) {
-          dF.appendChild(li("Definition Expression", data.definitionExpression));
+        dF.appendChild(li("Definition Expression", data.definitionExpression));
       }
       if (data.hasOwnProperty("defaultVisibility")) {
         dF.appendChild(li("Visible by default", data.defaultVisibility.toString()));
@@ -271,7 +271,7 @@
       }
 
       if (data.dateFieldsTimeReference) {
-        dF.appendChild(li("Date fields Time Zone", data.dateFieldsTimeReference.timeZone + "(Daylight Savings Time " + (data.dateFieldsTimeReference.respectsDaylightSaving ? "" : "not ") + "supported)"))
+        dF.appendChild(li("Date fields Time Zone", data.dateFieldsTimeReference.timeZone + "(Daylight Savings Time " + (data.dateFieldsTimeReference.respectsDaylightSaving ? "" : "not ") + "supported)"));
       }
 
       if (data.hasOwnProperty("supportedQueryFormats")) {
@@ -319,13 +319,13 @@
     if (data && data.hasOwnProperty("fields") && data.fields.length) {
       data.fields.some(function (field) {
         switch(field.type) {
-          case "esriFieldTypeOID":
-          case "":
-            oid = field.name;
-            break;
-          case "esriFieldTypeGeometry":
-            shape = field.name;
-            break;
+        case "esriFieldTypeOID":
+        case "":
+          oid = field.name;
+          break;
+        case "esriFieldTypeGeometry":
+          shape = field.name;
+          break;
         }
 
         return oid && shape;
@@ -334,9 +334,9 @@
 
     if (oid) {
       ajax(queryUrl.replace(/\+field\+/g, ["+","+"].join(oid) ), function (response) {
-      	if (response.count !== undefined && response.count !== null) {
-      	  ul.appendChild(li("Number of features", response.count ));
-      	}
+        if (response.count !== undefined && response.count !== null) {
+          ul.appendChild(li("Number of features", response.count ));
+        }
         if (response.hasOwnProperty("error") && response.error) {
           ul.appendChild(reportError(response.error));
         }
@@ -347,10 +347,10 @@
     
     if (shape) {
       ajax(queryUrl.replace(/\+field\+/g, ["+", "+"].join(shape)), function (response) {
-      	if (response.count !== undefined && response.count !== null) {
+        if (response.count !== undefined && response.count !== null) {
           ul.appendChild(li("Features with shapes", response.count ));
-      	}
-      	if (response.hasOwnProperty("error") && response.error) {
+        }
+        if (response.hasOwnProperty("error") && response.error) {
           ul.appendChild(reportError(response.error));
         }
       });
@@ -433,13 +433,13 @@
       node = nodes.shift(),
       params = "/query?where=not+field+is+null&returnGeometry=false&returnCountOnly=true&f=json".replace("field", field.name),
       resultList = document.createElement("ul"), timeCheck;
-      node.appendChild(resultList);
-      timeCheck = Date.now();
+    node.appendChild(resultList);
+    timeCheck = Date.now();
     ajax(url + params,
       function (response) {
         var item = document.createElement("li"),
           hasError = response.hasOwnProperty("error") && !!response.error,
-          newTimeCheck, errMessage;
+          newTimeCheck;
         if (response.count !== undefined && response.count !== null) {
           item.innerHTML =  ["<b>Features with values: </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(timeCheck),"</i>)"].join("");
         } else if (hasError) {
@@ -489,8 +489,8 @@
     }
     if (fields[0].length) {
       var item = fields[0].shift(),
-      value = item.type === "esriFieldTypeString" ? "'" + item.code + "'" : item.code,
-      params = "/query?where=field+%3D+value&returnGeometry=false&returnCountOnly=true&f=json".replace("field", item.field).replace("value", value);
+        value = item.type === "esriFieldTypeString" ? "'" + item.code + "'" : item.code,
+        params = "/query?where=field+%3D+value&returnGeometry=false&returnCountOnly=true&f=json".replace("field", item.field).replace("value", value);
       ajax(url + params,
         function (response) {
           var node = document.createElement("li"),
@@ -528,10 +528,7 @@
    * @function createButton
    * @param {string} text - text you want to insert within the button.
    */
-  function createButton(text) {
-    return loadElement("BUTTON", {"type": "button"}, text);
-  }
-
+  
   function swapInChoice(nodes, param) {
     if (!param.choiceList) {
       return;
@@ -553,7 +550,7 @@
   }
 
   function updateGPForm(response) {
-    var myForm, blanks = [], b;
+    var myForm, blanks = [];
     if (!response.parameters) {
       alert("Could not find GP parameters for this task.");
       return;
@@ -736,7 +733,7 @@
     titlepanel.appendChild(clearBtn);
 
     sidepanel.appendChild(titlepanel);
-    sidepanel.appendChild(loadElement("P", {}, "Click field name to get up to 1000 examples. Double-click selections to add to form."))
+    sidepanel.appendChild(loadElement("P", {}, "Click field name to get up to 1000 examples. Double-click selections to add to form."));
   
     data.fields.forEach(function (field) {
       fieldSelect.appendChild(loadElement("OPTION", {"value": field.name}, field.alias));  
@@ -803,8 +800,9 @@
     });
   }
 
-  chrome.extension.sendMessage({}, function(response) {
+  chrome.extension.sendMessage({}, function(/*response*/) {
     var readyStateCheckInterval = setInterval(function() {
+      var collectData;
       if (document.readyState === "complete") {
         clearInterval(readyStateCheckInterval);
 
@@ -831,14 +829,13 @@
          * @function collectData
          * @param {string[]} f - a list of urls to collect data on.
          */
-        function collectData(f) {
+        collectData = function (f) {
           if (!f.length) { return; }
           var data = f.shift();
           ajax(data.url + "?f=json",
             function (response) {
               var spatialReferenceNode = showSpatialReferenceData(response),
-                metadata = showMetadata(response),
-                dataCount;
+                metadata = showMetadata(response);
               
               if (spatialReferenceNode !== null) {
                 tags[data.i].parentNode.appendChild(spatialReferenceNode);  
@@ -858,7 +855,7 @@
                 collectData(f);
               }
             });
-        }
+        };
 
         chrome.storage.sync.get({
           autoMetadata: true
@@ -895,7 +892,7 @@
                         return item;
                       }));
                     } else {
-                      domainFieldHTML[i] = null
+                      domainFieldHTML[i] = null;
                     }
                   });
 
@@ -921,6 +918,9 @@
         if (queryTest.test(url)) {
           ajax(url.replace(queryTest, "") + "?f=json", queryHelper.bind(this, url));
         }
+        // todo: find page helper
+
+        // todo: identify page helper
 
         // todo: tile testing
         // todo: geometry helper
