@@ -10,7 +10,7 @@ module.exports = function (grunt) {
       main: {
         files: [
           {
-            src: ["**", "!package.json", "!Gruntfile.js", "!conf/**", "!node_modules/**"],
+            src: ["**", "!package.json", "!Gruntfile.js", "!.eslintrc.json", "!node_modules/**"],
             dest: "C://Temp//Map_Services_Enhanced"
           }
         ],
