@@ -715,33 +715,55 @@
   }
 
   /**
+   * Represents the SidePanel
+   * @constructor
+   * @param {string} title title to add to the sidepanel
+   * @property {object} node - HTML DOM node of the side panel.
+   */
+  function SidePanel(title) { 
+    this.node = loadElement("DIV", {"class": "sidepanel"});
+    // insert title
+    var titlePanel = loadElement("DIV", {"class": "titlepanel"});
+    titlePanel.appendChild(loadElement("b", {}, title));
+
+    // insert clear button
+    var clearBtn = loadElement("BUTTON", {"type": "button"}, "Clear");
+    clearBtn.addEventListener("click", clearActive);
+    titlePanel.appendChild(clearBtn);
+
+    this.node.appendChild(titlePanel);
+
+    document.body.appendChild(this.node);
+  }
+
+  SidePanel.prototype.note = function (text) {
+    this.node.appendChild(loadElement("P", {}, text));
+  };
+
+  SidePanel.prototype.addElement = function (node) {
+    this.node.appendChild(node);
+  };
+
+  /**
    * Builds the Query Helper panel
    * @function queryHelper
    * @param {string} url - url of the query service.
    * @param {object} data - JSON data from parent REST service
    */
   function queryHelper(url, data) {
-    var sidepanel = loadElement("DIV", {"class": "sidepanel"}),
-      titlepanel = loadElement("DIV", {"class": "titlepanel"}),
+    var sidepanel = new SidePanel("Query Helper"),
       fieldSelect = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."}),
       valueList = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."}),
       btns = loadElement("DIV", {"class": "buttonbox"});
     // set up side panel
 
-
-    titlepanel.appendChild(loadElement("b", {}, "Query Helper"));
-    var clearBtn = loadElement("BUTTON", {"type": "button"}, "Clear");
-    clearBtn.addEventListener("click", clearActive);
-    titlepanel.appendChild(clearBtn);
-
-    sidepanel.appendChild(titlepanel);
-    sidepanel.appendChild(loadElement("P", {}, "Click field name to get up to 1000 examples. Double-click selections to add to form."));
+    sidepanel.note("Click field name to get up to 1000 examples. Double-click selections to add to form.");
   
     data.fields.forEach(function (field) {
       fieldSelect.appendChild(loadElement("OPTION", {"value": field.name}, field.alias));  
     });
-    sidepanel.appendChild(fieldSelect);
-    sidepanel.appendChild(valueList);
+    sidepanel.addElement(fieldSelect);
+    sidepanel.addElement(valueList);
     fieldSelect.addEventListener("change", function () {
       var val = fieldSelect.value;
       valueList.innerHTML = "";
@@ -760,19 +782,17 @@
         "name": txt
       }, txt.replace(/\s+/g, "")));
     });
-    sidepanel.appendChild(btns);
+    sidepanel.addElement(btns);
     
     ["Count", "Sum", "Min", "Max", "Avg", "StdDev", "Var"].forEach(function (stat) {
-      insertStatisticsButton(sidepanel, stat, stat.toLowerCase());
+      insertStatisticsButton(sidepanel.node, stat, stat.toLowerCase());
     });
 
     // add quick helpers
-    insertQuickFillinButton(sidepanel, "Select All", { where: "1=1", outFields: "*", returnGeometry: "true" });
-    insertQuickFillinButton(sidepanel, "Select All but Geometry", { where: "1=1", outFields: "*", returnGeometry: "false" });
-    insertQuickFillinButton(sidepanel, "Get Count Only", { where: "1=1", returnDistinctValues: "false", returnCountOnly: "true", returnGeometry: "false" });
-    insertQuickFillinButton(sidepanel, "Select Distinct", { where: "1=1", returnDistinctValues: "true", returnGeometry: "false"});
-  
-    document.body.appendChild(sidepanel);
+    insertQuickFillinButton(sidepanel.node, "Select All", { where: "1=1", outFields: "*", returnGeometry: "true" });
+    insertQuickFillinButton(sidepanel.node, "Select All but Geometry", { where: "1=1", outFields: "*", returnGeometry: "false" });
+    insertQuickFillinButton(sidepanel.node, "Get Count Only", { where: "1=1", returnDistinctValues: "false", returnCountOnly: "true", returnGeometry: "false" });
+    insertQuickFillinButton(sidepanel.node, "Select Distinct", { where: "1=1", returnDistinctValues: "true", returnGeometry: "false"});
 
     // add events
     listenAll(document, "input[type=text], textarea", "blur", function () { 
@@ -794,10 +814,10 @@
       }
     });
 
-    listenAll(sidepanel, "select", "dblclick", function (evt) {
+    listenAll(sidepanel.node, "select", "dblclick", function (evt) {
       setActive(evt.currentTarget.value);
     });
-    listenAll(sidepanel, "button.sql", "click", function (evt) {
+    listenAll(sidepanel.node, "button.sql", "click", function (evt) {
       setActive(evt.currentTarget.name);
     });
   }
