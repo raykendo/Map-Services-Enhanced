@@ -561,11 +561,11 @@
       blanks = blanks.concat(Array.prototype.slice.call(myForm.getElementsByTagName("INPUT"), 0));
       response.parameters.forEach(swapInChoice.bind(this, blanks));
       blanks.some(function (blank) {
-        if (blank.name === "Web_Map_as_JSON") {
+        if (blank.name === "Web_Map_as_JSON" && /^\s*$/.test(blank.value)) {
           chrome.storage.sync.get({
             defaultWebMapAsJSON: ""
           }, function(items) {
-            blank.value = blank.value || items.defaultWebMapAsJSON;
+            blank.value = items.defaultWebMapAsJSON;
           });
         }
         return blank.name === "Web_Map_as_JSON";
