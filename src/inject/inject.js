@@ -702,16 +702,54 @@
   }
   
   /**
-   * Inserts a button in a panel that will insert statistics in a field.
-   * @function insertStatisticsButton
-   * @param {object} parentElement - panel or element where the button will be added
-   * @param {string} content - Text inside the button
-   * @param {object} formData - JSON of name, value pairs to insert in the form
+   * Adds statistics buttons to a side panel.
+   * @function addStatisticsControl
+   * @param {object} parentNode - HTML dom node of the sidepanel or whatever control you're adding
    */
-  function insertStatisticsButton(parentElement, content, statisticType) {
-    var btn = loadElement("BUTTON", {"type":"button", "class": "statistic", "style": "display:none;"}, content);
-    btn.addEventListener("click", addStatistic.bind(this, statisticType));
-    parentElement.appendChild(btn);
+  function addStatisticsControl (parentNode) {
+    ["Count", "Sum", "Min", "Max", "Avg", "StdDev", "Var"].forEach(function (stat) {
+      var btn = loadElement("BUTTON", {"type":"button", "class": "statistic", "style": "display:none;"}, stat);
+      btn.addEventListener("click", addStatistic.bind(this, stat.toLowerCase()));
+      parentNode.appendChild(btn);
+    });
+
+    // show/hide buttons on textbox focus
+    listenAll(document,  "input[type=text], textarea", "focus", function () {
+      var buttonNodes, i, il;
+
+      buttonNodes = document.querySelectorAll(".statistic");
+      il = buttonNodes.length;
+      for (i = 0; i < il; i++) {
+        if (this && this.name && this.name === "outStatistics") {
+          buttonNodes[i].style.display = "inline-block";
+        } else {
+          buttonNodes[i].style.display = "none";
+        }
+      }
+    });
+
+  }
+
+  /**
+   * Adds the SQL control buttons to the sidepanel.
+   * @function addSqlControl
+   * @param {object} parentNode - HTML dom node of the sidepanel or whatever control you're adding
+   */
+  function addSqlControl (parentNode) {
+    var btns = loadElement("DIV", {"class": "buttonbox"});
+     //[" = ", " &lt;&gt; ", " LIKE ", " &gt; ", " &gt;= ", " AND ", " &lt; ", " &lt;= ", " OR ", "_", "%", "()", "NOT ", " IS ", "*", "&#39;&#39;", " IN ", ", " ].forEach(function (txt) {
+    [" = ", " <> ", " LIKE ", " > ", " >= ", " AND ", " < ", " <= ", " OR ", "_", "%", "()", "NOT ", " IS ", "*", "''", " IN ", ", ", "NULL" ].forEach(function (txt) {
+      btns.appendChild(loadElement("button", {
+        "class": "sql",
+        "type": "button",
+        "name": txt
+      }, txt.replace(/\s+/g, "")));
+    });
+    parentNode.appendChild(btns);
+
+    listenAll(parentNode, "button.sql", "click", function (evt) {
+      setActive(evt.currentTarget.name);
+    });
   }
 
   /**
@@ -733,6 +771,11 @@
 
     this.node.appendChild(titlePanel);
 
+    // add events
+    listenAll(document, "input[type=text], textarea", "blur", function () { 
+      active = this;
+    });
+
     document.body.appendChild(this.node);
   }
 
@@ -753,8 +796,7 @@
   function queryHelper(url, data) {
     var sidepanel = new SidePanel("Query Helper"),
       fieldSelect = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."}),
-      valueList = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."}),
-      btns = loadElement("DIV", {"class": "buttonbox"});
+      valueList = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."});
     // set up side panel
 
     sidepanel.note("Click field name to get up to 1000 examples. Double-click selections to add to form.");
@@ -774,19 +816,10 @@
         });
       });
     });
-    //[" = ", " &lt;&gt; ", " LIKE ", " &gt; ", " &gt;= ", " AND ", " &lt; ", " &lt;= ", " OR ", "_", "%", "()", "NOT ", " IS ", "*", "&#39;&#39;", " IN ", ", " ].forEach(function (txt) {
-    [" = ", " <> ", " LIKE ", " > ", " >= ", " AND ", " < ", " <= ", " OR ", "_", "%", "()", "NOT ", " IS ", "*", "''", " IN ", ", ", "NULL" ].forEach(function (txt) {
-      btns.appendChild(loadElement("button", {
-        "class": "sql",
-        "type": "button",
-        "name": txt
-      }, txt.replace(/\s+/g, "")));
-    });
-    sidepanel.addElement(btns);
     
-    ["Count", "Sum", "Min", "Max", "Avg", "StdDev", "Var"].forEach(function (stat) {
-      insertStatisticsButton(sidepanel.node, stat, stat.toLowerCase());
-    });
+    addSqlControl(sidepanel.node);
+    
+    addStatisticsControl(sidepanel.node);
 
     // add quick helpers
     insertQuickFillinButton(sidepanel.node, "Select All", { where: "1=1", outFields: "*", returnGeometry: "true" });
@@ -794,32 +827,10 @@
     insertQuickFillinButton(sidepanel.node, "Get Count Only", { where: "1=1", returnDistinctValues: "false", returnCountOnly: "true", returnGeometry: "false" });
     insertQuickFillinButton(sidepanel.node, "Select Distinct", { where: "1=1", returnDistinctValues: "true", returnGeometry: "false"});
 
-    // add events
-    listenAll(document, "input[type=text], textarea", "blur", function () { 
-      active = this;
-    });
-
-    // show/hide buttons
-    listenAll(document,  "input[type=text], textarea", "focus", function () {
-      var buttonNodes, i, il;
-
-      buttonNodes = document.querySelectorAll(".statistic");
-      il = buttonNodes.length;
-      for (i = 0; i < il; i++) {
-        if (this && this.name && this.name === "outStatistics") {
-          buttonNodes[i].style.display = "inline-block";
-        } else {
-          buttonNodes[i].style.display = "none";
-        }
-      }
-    });
-
     listenAll(sidepanel.node, "select", "dblclick", function (evt) {
       setActive(evt.currentTarget.value);
     });
-    listenAll(sidepanel.node, "button.sql", "click", function (evt) {
-      setActive(evt.currentTarget.name);
-    });
+    
   }
 
   chrome.extension.sendMessage({}, function(/*response*/) {
