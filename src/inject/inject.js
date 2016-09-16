@@ -168,7 +168,7 @@
    */
   function reportError(err0r) {
     var codeNumber = -99999;
-    
+
     if (err0r.hasOwnProperty("code")) {
       codeNumber = err0r.code;
     }
@@ -179,6 +179,17 @@
     switch(codeNumber) {
     case -2147220985:
       return li("Cannot count features with valid shape fields in a shapefile");
+    case 400:
+      if (arguments.length > 1) {
+        if (arguments[1].hasOwnProperty("type")) {
+          switch(arguments[1].type) {
+          case "esriFieldTypeOID":
+            return li("Service does not support checking for null ObjectID");
+          case "esriFieldTypeGeometry": 
+            return li("Service datasource does not support checking for null/empty geometry");
+          }
+        }
+      }
     }
 
     return addSubList("Error", err0r, "error");
@@ -338,7 +349,7 @@
           ul.appendChild(li("Number of features", response.count ));
         }
         if (response.hasOwnProperty("error") && response.error) {
-          ul.appendChild(reportError(response.error));
+          ul.appendChild(reportError(response.error, {"type": "esriFieldTypeOID"}));
         }
       });
     } else {
@@ -351,7 +362,7 @@
           ul.appendChild(li("Features with shapes", response.count ));
         }
         if (response.hasOwnProperty("error") && response.error) {
-          ul.appendChild(reportError(response.error));
+          ul.appendChild(reportError(response.error, {"type": "esriFieldTypeGeometry"}));
         }
       });
     } else if (!/\/featureserver\//i.test(url) && (data.type && data.type !== "Table")) {
@@ -443,7 +454,7 @@
         if (response.count !== undefined && response.count !== null) {
           item.innerHTML =  ["<b>Features with values: </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(timeCheck),"</i>)"].join("");
         } else if (hasError) {
-          item = reportError(response.error);
+          item = reportError(response.error, field);
         }
         resultList.appendChild(item);
         if (!hasError && field.type === "esriFieldTypeString") {
@@ -524,31 +535,46 @@
   }
 
   /**
-   * Creates a button with the entered text.
-   * @function createButton
-   * @param {string} text - text you want to insert within the button.
+   * Switches a text blank for a select element if choices are present.
+   * @function swapInChoice
+   * @param {object[]} nodes - list of HTML DOM nodes for text blanks and textareas in the form
+   * @param {object} param - GP task parameters taken from REST Service.
    */
-  
   function swapInChoice(nodes, param) {
     if (!param.choiceList) {
       return;
     }
-    var select = loadElement("select", {
-      "name": param.name
-    });
-    param.choiceList.forEach(function(choice) {
-      var option = loadElement("option", {
-        value: choice
-      }, choice);
-      select.appendChild(option);
-    });
-    select.value = param.defaultValue;
-    var myNode = nodes.filter(function (node) {
+
+    var nodesByName = nodes.filter(function (node) {
       return node.name === param.name;
-    })[0];
-    myNode.parentNode.replaceChild(select, myNode);
+    });
+
+    if (nodesByName.length > 0) {
+      nodesByName.forEach(function (nodeToReplace) {
+        var select = loadElement("select", {
+          "name": param.name
+        });
+        // generate options
+        param.choiceList.forEach(function(choice) {
+          var option = loadElement("option", {
+            value: choice
+          }, choice);
+          select.appendChild(option);
+        });
+        
+        select.value = param.defaultValue;
+        // replace existing node with select node.
+        nodeToReplace.parentNode.replaceChild(select, nodeToReplace);
+      });
+    }
   }
 
+  /**
+   * Modifies the Geoprocessing form to make choices easier. 
+   * function updateGPForm
+   * @param {object} response
+   * @returns
+   */
   function updateGPForm(response) {
     var myForm, blanks = [];
     if (!response.parameters) {
@@ -557,9 +583,13 @@
     }
     try {
       myForm = document.getElementsByTagName("FORM")[0];
+      // get TextAreas in form
       blanks = Array.prototype.slice.call(myForm.getElementsByTagName("TEXTAREA"), 0);
+      // concat in list of inputs in the form
       blanks = blanks.concat(Array.prototype.slice.call(myForm.getElementsByTagName("INPUT"), 0));
+      // for each parameter in the geoprocessing JSON, swap in choices 
       response.parameters.forEach(swapInChoice.bind(this, blanks));
+      // look for Web_Map_as_JSON blank to fill in with default value.
       blanks.some(function (blank) {
         if (blank.name === "Web_Map_as_JSON" && /^\s*$/.test(blank.value)) {
           chrome.storage.sync.get({
