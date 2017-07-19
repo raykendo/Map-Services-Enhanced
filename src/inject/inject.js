@@ -549,7 +549,7 @@
       return node.name === param.name;
     });
 
-    if (nodesByName.length > 0) {
+    if (nodesByName && nodesByName.length > 0) {
       nodesByName.forEach(function (nodeToReplace) {
         var select = loadElement("select", {
           "name": param.name
@@ -672,7 +672,11 @@
     var formFields = Array.prototype.slice.call(document.getElementsByTagName("INPUT"), 0);
   
     formFields = formFields.concat(Array.prototype.slice.call(document.getElementsByTagName("TEXTAREA"), 0));
-  
+    
+    if (!formFields || formFields.length < 1) {
+      return;
+    }
+
     formFields.forEach(function (item) {
       if (formData.hasOwnProperty(item.name)) {
         if (item.type && item.type === "radio" && formData[item.name] === item.value) {
@@ -840,10 +844,17 @@
       var val = fieldSelect.value;
       valueList.innerHTML = "";
       ajax(url + "?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), function (res) {
-        res.features.forEach(function (feature) {
-          var featureValue =  isNaN(feature.attributes[val] * 1) ? "'{0}'".replace("{0}", feature.attributes[val]) : feature.attributes[val];
-          valueList.appendChild(loadElement("option", {"value": featureValue}, feature.attributes[val]));
-        });
+        if (!res || !res.features || res.features.length === 0) {
+          valueList.apopendChild(loadElement("option", {"value": ""}, "No values found for this field"));
+          valueList.setAttribute("disabled", "disabled");
+        } else {
+          valueList.removeAttribute("disabled");
+          res.features.forEach(function (feature) {
+            var featureValue =  isNaN(feature.attributes[val] * 1) ? "'{0}'".replace("{0}", feature.attributes[val]) : feature.attributes[val];
+            valueList.appendChild(loadElement("option", {"value": featureValue}, feature.attributes[val]));
+            
+          });  
+        }
       });
     });
     
@@ -931,7 +942,7 @@
         // field and domain data counting.
         if (/(imageserver|\d+)\/?$/i.test(url)) {
           ajax(url + "?f=json", function (results) {
-            if (results.fields && results.fields.length) {
+            if (results && results.fields && results.fields.length > 0) {
               var fieldHTML = getFieldList(),
                 domainFields, domainFieldHTML;
 
