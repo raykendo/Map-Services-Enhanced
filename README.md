@@ -18,3 +18,4 @@ The [Map Services Enhanced](https://github.com/raykendo/ArcGIS-REST-Enhanced) pr
 - Count results of each field and domain in a map service layer.
 - Create SQL queries with the click of a mouse.
 - Simplify map export service testing.
+- URL Shortener for query pages with unnecessarily long query parameter lists.
