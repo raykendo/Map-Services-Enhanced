@@ -667,8 +667,10 @@
    * Inserts pre-defined data into a form on a page
    * @function quickFormFillin
    * @param {object} formData - JSON of name, value pairs to insert in the form
+   * @param {boolean} clickSubmit - if true, click the submit button
    */
-  function quickFormFillin(formData) {
+  function quickFormFillin(formData, clickSubmit) {
+    console.log("quickFormFillin");
     var formFields = Array.prototype.slice.call(document.getElementsByTagName("INPUT"), 0);
   
     formFields = formFields.concat(Array.prototype.slice.call(document.getElementsByTagName("TEXTAREA"), 0));
@@ -686,6 +688,29 @@
         }
       }
     });
+
+    if (clickSubmit) {
+      chrome.storage.sync.get({
+        queryHelperSelectAll: "get"
+      }, 
+      function (item) {
+        var submitButtons = document.querySelectorAll("input[type='submit']"),
+          submitButton;
+        switch(item.queryHelperSelectAll) {
+        case "get":
+          alert("get");
+          submitButton = submitButtons[0];
+          break;
+        case "post":
+          submitButton = submitButtons[1];
+          break;
+        }
+
+        if (submitButton) {
+          submitButton.click();
+        } 
+      });
+    }
   }
   
   /**
@@ -694,10 +719,16 @@
    * @param {object} parentElement - panel or element where the button will be added
    * @param {string} content - Text inside the button
    * @param {object} formData - JSON of name, value pairs to insert in the form
+   * @param {boolean} clickSubmit - if true, click the submit button
+   * 
    */
-  function insertQuickFillinButton(parentElement, content, formData) {
-    var quickBtn = loadElement("BUTTON", {"type": "button"}, content);
-    quickBtn.addEventListener("click", quickFormFillin.bind(this, formData));
+  function insertQuickFillinButton(parentElement, content, formData, clickSubmit) {
+    var buttonConfig = {type: "button"};
+    if (clickSubmit) {
+      buttonConfig.title = "Clicking here will auto-submit your request (see options for details)";
+    }
+    var quickBtn = loadElement("BUTTON", buttonConfig, content);
+    quickBtn.addEventListener("click", quickFormFillin.bind(this, formData, !!clickSubmit));
     parentElement.appendChild(quickBtn);
     parentElement.appendChild(document.createElement("br"));
   }
@@ -863,9 +894,9 @@
     addStatisticsControl(sidepanel.node);
 
     // add quick helpers
-    insertQuickFillinButton(sidepanel.node, "Select All", { where: "1=1", outFields: "*", returnGeometry: "true" });
-    insertQuickFillinButton(sidepanel.node, "Select All but Geometry", { where: "1=1", outFields: "*", returnGeometry: "false" });
-    insertQuickFillinButton(sidepanel.node, "Get Count Only", { where: "1=1", returnDistinctValues: "false", returnCountOnly: "true", returnGeometry: "false" });
+    insertQuickFillinButton(sidepanel.node, "Select All *", { where: "1=1", outFields: "*", returnCountOnly: "false", returnGeometry: "true" }, true);
+    insertQuickFillinButton(sidepanel.node, "Select All but Geometry *", { where: "1=1", outFields: "*", returnCountOnly: "false", returnGeometry: "false" }, true);
+    insertQuickFillinButton(sidepanel.node, "Get Count Only *", { where: "1=1", returnDistinctValues: "false", returnCountOnly: "true", returnGeometry: "false" }, true);
     insertQuickFillinButton(sidepanel.node, "Select Distinct", { where: "1=1", returnDistinctValues: "true", returnGeometry: "false"});
 
     listenAll(sidepanel.node, "select", "dblclick", function (evt) {

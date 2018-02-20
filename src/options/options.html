@@ -7,6 +7,13 @@
       display: block;
       width: 100%;
     }
+    input[type=text], textarea {
+      box-sizing: border-box;
+    }
+    fieldset {
+      padding: 0 5px;
+      border-radius: 6px;
+    }
   </style>
 </head>
 <body>
@@ -39,6 +46,17 @@
 <legend>Print Task</legend>
 <label for="defaultwebmapasjson">Default Print Task WebMapAsJSON</label>
 <textarea rows="5" id="defaultwebmapasjson"></textarea>
+</fieldset>
+
+<fieldset>
+  <legend>Query Helper</legend>
+  <p>On clicking <b>Select All</b> or <b>Select all but Geometry</b>...</p>
+  <input type="radio" name="queryhelperselectall" id="qhget" value="get" />
+  <label for="qhget">Query (GET)</label><br />
+  <input type="radio" name="queryhelperselectall" id="qhpost" value="post" />
+  <label for="qhpost">Query (POST)</label><br />
+  <input type="radio" name="queryhelperselectall" id="qhnothing" value="donothing" />
+  <label for="qhnothing">Do Nothing</label>
 </fieldset>
 
 <div id="status"></div>
