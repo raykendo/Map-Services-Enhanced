@@ -44,6 +44,7 @@
   function printResult(field, result, url) {
     var li = d.createElement("li"), link = d.createElement("a");
     link.setAttribute("href", url);
+    link.setAttribute("target", "_blank");
     link.innerHTML = ["<b>Source: </b>", url.replace(/^\S*\/rest\/services\//i, "."), "<br /><b>", field, ": </b>", result].join("");
     li.appendChild(link);
     resultList.appendChild(li);

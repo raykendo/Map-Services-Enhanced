@@ -1,0 +1,55 @@
+body {
+  font-family: Helvetica, Ubuntu, Arial, sans-serif;
+  font-size: 16px;
+}
+#mainPopup {
+  padding: 10px;
+  width: 400px;
+}
+h1 {
+  font-size: 1.8em;
+  margin: 0;
+}
+form {
+  font-size: 1em;
+}
+p {
+  margin: 0.25em 0;
+}
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+button {
+  color: #fff;
+  background-color: #028;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px 16px;
+}
+button:disabled {
+  opacity: 0.5;
+}
+input[type=text] {
+  width: 75%;
+  box-sizing: border-box;
+  line-height: 1.5em;
+}
+#searchresults > li {
+  border: 1px solid #77a;
+  border-bottom: 0;
+  padding: 0.125em;
+  margin: 0;
+}
+#searchresults > li:last-child {
+  border-bottom: 1px solid #ccc;
+}
+li > a {
+  display: block;
+  text-decoration: none;
+}
+fieldset {
+  padding: 0 5px;
+  border-radius: 6px;
+}

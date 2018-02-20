@@ -1,77 +1,33 @@
 <!doctype html>
 <html>
 <head>
-<title>Map Services Enhanced for Chrome</title>
-<style type="text/css">
-	body {
-		font-family: Helvetica, Ubuntu, Arial, sans-serif;
-		font-size: 16px;
-	}
-	#mainPopup {
-		padding: 10px;
-		width: 400px;
-		
-	}
-	h1 {
-		font-size: 2em;
-	}
-	form {
-		font-size: 1.1em;
-	}
-	ul {
-		list-style-type: none;
-		margin: 0;
-		padding: 0;
-	}
-	button {
-		color: #fff;
-		background-color: #028;
-		border-radius: 6px;
-		padding: 4px 16px;
-	}
-	button:disabled {
-		opacity: 0.5;
-	}
-	input[type=text] {
-		width: 75%;
-
-	}
-	#searchresults > li {
-		border: 1px solid #77a;
-		border-bottom: 0;
-		padding: 0.125em;
-		margin: 0;
-	}
-	#searchresults > li:last-child {
-		border-bottom: 1px solid #ccc;
-	}
-	li > a {
-		display: block;
-		text-decoration: none;
-	}
-	fieldset {
-		padding: 0 5px;
-	}
-</style>
+	<title>Map Services Enhanced for Chrome</title>
+	<link rel="stylesheet" type="text/css" href="page_action.css" />
 </head>
 <body>
-<div id="mainPopup">
-<h1>Map Services Enhanced</h1>
-
-</div>
-<form>
-<fieldset>
-<legend>REST Search</legend>
-<p>Search for map services, layers, fields, etc. with the following relevant text:</p> 
-<input style="width: 75%;" type="text" id="searchblank" placeholder="Searches current folder and subdirectories" />
-<button id="searchbtn">Search</button>
-<br />
-<b>Locations searched: </b><span id="searchedfeatures"></span><br />
-<b>Results found: </b><span id="searchresultscount"></span>
-<ul id="searchresults">
-</ul>
-</fieldset>
-</form>
-<script src="page_action.js"></script>
+	<div id="mainPopup">
+		<h1>Map Services Enhanced</h1>
+	</div>
+	<div id="urlshortcontent">
+		<fieldset>
+			<legend>URL Shortener</legend>
+			<input style="width: 100%;" type="text" id="urlshortblank" />
+			<button id="copybtn">Copy to Clipboard</button>
+		</fieldset>
+	</div>
+	<form>
+		<fieldset>
+			<legend>REST Search</legend>
+			<p>Search for map services, layers, fields, etc. with the following relevant text:</p> 
+			<input style="width: 75%;" type="text" id="searchblank" placeholder="Searches current folder and subdirectories" />
+			<button id="searchbtn">Search</button>
+			<br />
+			<b>Locations searched: </b><span id="searchedfeatures"></span><br />
+			<b>Results found: </b><span id="searchresultscount"></span>
+			<ul id="searchresults"></ul>
+		</fieldset>
+	</form>
+	<script src="search.js"></script>
+	<script src="url_shortener.js"></script>
 </body>
 </html>
