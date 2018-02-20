@@ -670,7 +670,6 @@
    * @param {boolean} clickSubmit - if true, click the submit button
    */
   function quickFormFillin(formData, clickSubmit) {
-    console.log("quickFormFillin");
     var formFields = Array.prototype.slice.call(document.getElementsByTagName("INPUT"), 0);
   
     formFields = formFields.concat(Array.prototype.slice.call(document.getElementsByTagName("TEXTAREA"), 0));
