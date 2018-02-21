@@ -103,6 +103,8 @@
     return colorhash[item];
   }
 
+
+
   /**
    * Calculates a complimentary shade or tint of a color to provide contrast
    * @function getCompColor
@@ -158,6 +160,50 @@
     }
     
     return container;
+  }
+
+  /** */
+  function getMapDiv () {
+    var mapDiv = document.getElementById("mapdiv");
+
+    if (!mapDiv) {
+      var parentDiv = loadElement("DIV", {
+        style: "position:fixed;top:0;right:0;border:1px solid #ccc;z-index:10;padding:8px;background:#fff;"
+      });
+      document.body.appendChild(parentDiv);
+      mapDiv = loadElement("DIV", {
+        id: "mapdiv" 
+      });
+      parentDiv.appendChild(mapDiv);
+      parentDiv.appendChild(loadElement("P", {}, "Hover over a Map Service link to view it."));
+    }
+
+    return mapDiv;
+  }
+
+  /**
+   * On hover, get map
+   * @param {Event} evt 
+   */
+  function hoverGetMap (evt) {
+    if (!evt || !evt.target) {
+      return;
+    }
+    var url = evt.target.href;
+    if (!url) {
+      return;
+    }
+    console.log("hover get map:", url);
+    var getMap = false;
+    if (getMap) {
+      var mapDiv = getMapDiv();
+      mapDiv.innerHTML = "";
+    }
+    
+  }
+
+  function hoverHideMap () {
+    console.log("hover hide map");
   }
 
   /**
@@ -946,6 +992,8 @@
           return /(map|feature|image|mobile)server(\/\d*\/?)?$/i.test(item.url);
         });
 
+        
+
         /**
          * collect and present service data based on a list of urls.
          * @function collectData
@@ -1030,6 +1078,14 @@
             }
           });
         }
+
+        // map display on hover
+        urls.forEach(function (item) {
+          var tag = tags[item.i];
+
+          tag.addEventListener("mouseover", hoverGetMap);
+          tag.addEventListener("mouseout", hoverHideMap);
+        });
 
         // handling print task and other 
         if (printTaskTest.test(url)) {
