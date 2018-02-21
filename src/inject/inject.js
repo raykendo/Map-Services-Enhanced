@@ -851,6 +851,22 @@
     this.node.appendChild(node);
   };
 
+  /** 
+   * Inserts a default where clause
+   */
+  function insertDefaultWhereClause() {
+    chrome.storage.sync.get({
+      defaultWhereClause: ""
+    }, function(items) {
+      var whereInput = document.querySelector("input[name = where]");
+      // if the where clause input is empty and the defaultWhereClause is not, add it in.
+      console.log("whereInput", whereInput);
+      if (whereInput && !whereInput.value && items.defaultWhereClause) {
+        whereInput.value = items.defaultWhereClause;
+      }
+    });
+  }
+
   /**
    * Builds the Query Helper panel
    * @function queryHelper
@@ -901,6 +917,8 @@
     listenAll(sidepanel.node, "select", "dblclick", function (evt) {
       setActive(evt.currentTarget.value);
     });
+
+    insertDefaultWhereClause();
     
   }
 

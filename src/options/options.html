@@ -10,6 +10,10 @@
     input[type=text], textarea {
       box-sizing: border-box;
     }
+    input[type=text] {
+      width: 100%;
+      line-height: 1.5em;
+    }
     fieldset {
       padding: 0 5px;
       border-radius: 6px;
@@ -50,6 +54,8 @@
 
 <fieldset>
   <legend>Query Helper</legend>
+  <label for="defaultwhereclause">Default where clause in query statements if space is blank</label>
+  <input type="text" id="defaultwhereclause" placeholder="Leave blank for no default" /><br />
   <p>On clicking <b>Select All</b> or <b>Select all but Geometry</b>...</p>
   <input type="radio" name="queryhelperselectall" id="qhget" value="get" />
   <label for="qhget">Query (GET)</label><br />
