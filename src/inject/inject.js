@@ -103,7 +103,12 @@
     return colorhash[item];
   }
 
-
+  /**
+   * Returns whether a field is queryable
+   */
+  function isQueryableField(field) {
+    return ["esriFieldTypeGeometry","esriFieldTypeBlob","esriFieldTypeXML","esriFieldTypeRaster"].indexOf(field.type) === -1;
+  }
 
   /**
    * Calculates a complimentary shade or tint of a color to provide contrast
@@ -743,7 +748,6 @@
           submitButton;
         switch(item.queryHelperSelectAll) {
         case "get":
-          alert("get");
           submitButton = submitButtons[0];
           break;
         case "post":
@@ -889,12 +893,17 @@
     document.body.appendChild(this.node);
   }
 
-  SidePanel.prototype.note = function (text) {
-    this.node.appendChild(loadElement("P", {}, text));
-  };
-
   SidePanel.prototype.addElement = function (node) {
     this.node.appendChild(node);
+  };
+
+  SidePanel.prototype.note = function (text) {
+    this.addElement(loadElement("P", {}, text));
+  };
+
+  SidePanel.prototype.label = function (text) {
+    this.addElement(loadElement("SPAN", {}, text));
+    this.addElement(loadElement("BR", {}));
   };
 
   /** 
@@ -914,6 +923,97 @@
   }
 
   /**
+   * Builds the Find Helper Panel
+   * @function findHelper
+   * @param {string} url
+   * @param {object} data - JSON data from the layers REST service
+   */
+  function findHelper(url, data) {
+    var sidepanel = new SidePanel("Find Helper"),
+      dataItems = (data.layers || []).concat(data.tables || []),
+      layerSelectorHeight = Math.min(dataItems.length, 6),
+      layerSelect = loadElement("SELECT", {"size": layerSelectorHeight.toString(), "title": "Double-click to add to form."}),
+      fieldSelect = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."}),
+      valueList = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."});
+      
+    sidepanel.note("Select layer to populate fields. Click field name to get up to 1000 examples. Double-click selections to add to form.");
+    
+    dataItems.forEach(function (item) {
+      layerSelect.appendChild(loadElement("OPTION", {"value": item.id}, item.name));  
+    });
+
+    sidepanel.label("Layers:");
+    sidepanel.addElement(layerSelect);
+    sidepanel.label("Fields:");
+    sidepanel.addElement(fieldSelect);
+    sidepanel.label("Values:");
+    sidepanel.addElement(valueList);
+
+    // on layerSelect change, update the fieldSelect list.
+    layerSelect.addEventListener("change", function () {
+      var layerId = parseInt(layerSelect.value, 10);
+      console.log('layer select value', layerId);
+      fieldSelect.innerHTML = "";
+      dataItems.filter(function (item) {
+        return item.id === layerId;
+      }).forEach(function (item) {
+        
+        if (!item || !item.fields || !item.fields.length) {
+          fieldSelect.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
+          fieldSelect.setAttribute("disabled", "disabled");
+          return;
+        } 
+        
+        var fields = item.fields.filter(isQueryableField);
+        if (fields.length === 0) {
+          fieldSelect.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
+          fieldSelect.setAttribute("disabled", "disabled");
+          return;
+        }
+
+        fieldSelect.removeAttribute("disabled");
+        fields.forEach(function (field) {
+          fieldSelect.appendChild(loadElement("OPTION", {"value": field.name}, field.alias));  
+        });
+        
+      });
+    });
+
+    // on fieldSelect change, update the values list
+    fieldSelect.addEventListener("change", function () {
+      var val = fieldSelect.value;
+      var layerId = layerSelect.value;
+      valueList.innerHTML = "";
+      ajax(url + "/" + layerId + "/query?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), function (res) {
+        if (!res || !res.features || res.features.length === 0) {
+          valueList.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
+          valueList.setAttribute("disabled", "disabled");
+        } else {
+          valueList.removeAttribute("disabled");
+          res.features.forEach(function (feature) {
+            var featureValue =  isNaN(feature.attributes[val] * 1) ? "'{0}'".replace("{0}", feature.attributes[val]) : feature.attributes[val];
+            valueList.appendChild(loadElement("option", {"value": featureValue}, feature.attributes[val]));
+          });  
+        }
+      });
+    });
+
+    // insert valid layers into layers input.
+    var layersBlank = document.querySelector("input[name = layers]");
+    if (layersBlank && !layersBlank.value) {
+      layersBlank.value = dataItems.filter(function (item) {
+        return !item.subLayers || item.subLayers.length === 0;
+      }).map(function (item) {
+        return item.id;
+      }).join(",");
+    }
+
+    listenAll(sidepanel.node, "select", "dblclick", function (evt) {
+      setActive(evt.currentTarget.value);
+    });
+  }
+
+  /**
    * Builds the Query Helper panel
    * @function queryHelper
    * @param {string} url - url of the query service.
@@ -927,7 +1027,7 @@
 
     sidepanel.note("Click field name to get up to 1000 examples. Double-click selections to add to form.");
   
-    data.fields.forEach(function (field) {
+    data.fields.filter(isQueryableField).forEach(function (field) {
       fieldSelect.appendChild(loadElement("OPTION", {"value": field.name}, field.alias));  
     });
     sidepanel.addElement(fieldSelect);
@@ -937,7 +1037,7 @@
       valueList.innerHTML = "";
       ajax(url + "?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), function (res) {
         if (!res || !res.features || res.features.length === 0) {
-          valueList.apopendChild(loadElement("option", {"value": ""}, "No values found for this field"));
+          valueList.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
           valueList.setAttribute("disabled", "disabled");
         } else {
           valueList.removeAttribute("disabled");
@@ -978,6 +1078,7 @@
         var tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0),
           url = window.location.href.split("?")[0],
           queryTest = /\/query\/?$/i,
+          findTest = /\/find\/?$/i,
           printTaskTest = /\/(execute|submitjob)\/?$/i,
           urls;
 
@@ -1097,6 +1198,10 @@
           ajax(url.replace(queryTest, "") + "?f=json", queryHelper.bind(this, url));
         }
         // todo: find page helper
+        if (findTest.test(url)) {
+          var findBaseUrl = url.replace(findTest, "");
+          ajax(findBaseUrl + "/layers?f=json", findHelper.bind(this, findBaseUrl));
+        }
 
         // todo: identify page helper
 
