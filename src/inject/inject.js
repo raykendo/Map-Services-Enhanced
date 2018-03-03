@@ -906,6 +906,146 @@
     this.addElement(loadElement("BR", {}));
   };
 
+  /**
+   * Field Selector
+   * @constructor
+   * @param {string} url 
+   * @param {HTML} parentNode
+   * @param {function} callback
+   */
+  function FieldSelector(url, parentNode, callback) {
+    var singleLayer = /server\/\d+\/?$/.test(url),
+      jsonUrl = url + (singleLayer ? "" : "/layers") + "?f=json",
+      helpMessage = "Click field name to get up to 1000 examples. Double-click selections to add to form.",
+      helpMessageNode;
+
+    /**
+     * Renderer for the Field Selector
+     * @param {function} callback - call this once the renderer has completed
+     * @param {object|object[]} data 
+     */
+    this.buildRenderer = function (callback, data) {
+      var dataItems, layerSelectorHeight;
+      if (!data) {
+        return;
+      }
+      // collect layer data into a list
+      dataItems = (data.layers || []).concat(data.tables || []);
+      if (dataItems.length === 0) {
+        dataItems = [data];
+      }
+      // filter out potential parent layers with no data.
+      dataItems = dataItems.filter(function (item) {
+        return !item.subLayers || item.subLayers.length === 0;
+      });
+  
+      //construct the layer selector
+      layerSelectorHeight = Math.min(dataItems.length, 5);
+      this.layerSelect = loadElement("SELECT", {"size": layerSelectorHeight.toString(), "title": "Double-click to add to form."}),
+      this.fieldSelect = loadElement("SELECT", {"size": "5", "title": "Double-click to add to form."}),
+      this.valueList = loadElement("SELECT", {"size": "5", "title": "Double-click to add to form."});
+  
+      // add layer options, even if there is just one
+      dataItems.forEach(function (item) {
+        this.layerSelect.appendChild(loadElement("OPTION", {"value": item.id}, item.name || item.title));  
+      }, this);
+  
+      // if layer 
+      if (dataItems.length === 1) {
+        this.layerSelect.className = "hidden";
+        this.updateFields(dataItems);
+      } else {
+        parentNode.appendChild(loadElement("SPAN", {}, "Layers:"));
+        // on layerSelect change, update the fieldSelect list.
+        this.layerSelect.addEventListener("change", this.updateFields.bind(this, dataItems));
+      }
+      parentNode.appendChild(this.layerSelect);
+      parentNode.appendChild(loadElement("SPAN", {}, "Fields:"));
+      parentNode.appendChild(this.fieldSelect);
+      parentNode.appendChild(loadElement("SPAN", {}, "Values:"));
+      parentNode.appendChild(this.valueList);
+  
+      this.fieldSelect.addEventListener("change", this.updateValues.bind(this, url.replace(/\/\d*\/?$/, "")));
+    
+      // apply double-click event listeners to fill in items.
+      listenAll(parentNode, "select", "dblclick", function (evt) {
+        setActive(evt.currentTarget.value);
+      });
+
+      // call the callback with the data items collected from the previous ajax call.
+      if (callback && typeof callback === "function") {
+        callback(dataItems);
+      }
+    };
+
+    /**
+     * Update the field items.
+     * @param {object[]} dataItems 
+     */
+    this.updateFields = function (dataItems) {
+      var layerId = parseInt(this.layerSelect.value, 10);
+      console.log("layer select value ", layerId);
+      this.fieldSelect.innerHTML = "";
+      dataItems.filter(function (item) {
+        return item.id === layerId;
+      }).forEach(function (item) {
+        
+        if (!item || !item.fields || !item.fields.length) {
+          this.fieldSelect.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
+          this.fieldSelect.setAttribute("disabled", "disabled");
+          return;
+        } 
+        
+        var fields = item.fields.filter(isQueryableField);
+        if (fields.length === 0) {
+          this.fieldSelect.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
+          this.fieldSelect.setAttribute("disabled", "disabled");
+        } else {  
+          this.fieldSelect.removeAttribute("disabled");
+          fields.forEach(function (field) {
+            this.fieldSelect.appendChild(loadElement("OPTION", {"value": field.name}, field.alias));  
+          }, this);
+        }
+      });
+    };
+
+    /**
+     * Update the value items
+     * @param {string} url
+     */
+    this.updateValues = function (url) {
+      var val = this.fieldSelect.value;
+      console.log('fieldselect value', val);
+      var layerId = this.layerSelect.value;
+      console.log('layerSelect value', layerId);
+      this.valueList.innerHTML = "";
+      ajax(url + "/" + layerId + "/query?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), function (res) {
+        console.log('results of query', res);
+        if (!res || !res.features || res.features.length === 0) {
+          this.valueList.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
+          this.valueList.setAttribute("disabled", "disabled");
+        } else {
+          this.valueList.removeAttribute("disabled");
+          res.features.forEach(function (feature) {
+            var featureValue =  isNaN(feature.attributes[val] * 1) ? "'{0}'".replace("{0}", feature.attributes[val]) : feature.attributes[val];
+            this.valueList.appendChild(loadElement("option", {"value": featureValue}, feature.attributes[val]));
+          }, this);  
+        }
+      }.bind(this));
+    };
+
+    // update help message
+    if (!singleLayer) {
+      helpMessage = "Select layer to populate fields. " + helpMessage;
+    }
+    helpMessageNode = loadElement("P", {}, helpMessage);
+    parentNode.appendChild(helpMessageNode);
+
+    // get JSON data from service and build data afterward.
+    ajax(jsonUrl, this.buildRenderer.bind(this, callback));
+    
+  }
+
   /** 
    * Inserts a default where clause
    */
@@ -926,146 +1066,46 @@
    * Builds the Find Helper Panel
    * @function findHelper
    * @param {string} url
-   * @param {object} data - JSON data from the layers REST service
    */
-  function findHelper(url, data) {
-    var sidepanel = new SidePanel("Find Helper"),
-      dataItems = (data.layers || []).concat(data.tables || []),
-      layerSelectorHeight = Math.min(dataItems.length, 6),
-      layerSelect = loadElement("SELECT", {"size": layerSelectorHeight.toString(), "title": "Double-click to add to form."}),
-      fieldSelect = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."}),
-      valueList = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."});
-      
-    sidepanel.note("Select layer to populate fields. Click field name to get up to 1000 examples. Double-click selections to add to form.");
+  function findHelper(url) {
+    var sidepanel = new SidePanel("Find Helper");
     
-    dataItems.forEach(function (item) {
-      layerSelect.appendChild(loadElement("OPTION", {"value": item.id}, item.name));  
+    FieldSelector(url, sidepanel.node, function (dataItems) {
+      // insert valid layers into layers input.
+      var layersBlank = document.querySelector("input[name = layers]");
+      if (layersBlank && !layersBlank.value) {
+        layersBlank.value = dataItems.filter(function (item) {
+          return !item.subLayers || item.subLayers.length === 0;
+        }).map(function (item) {
+          return item.id;
+        }).join(",");
+      }
     });
-
-    sidepanel.label("Layers:");
-    sidepanel.addElement(layerSelect);
-    sidepanel.label("Fields:");
-    sidepanel.addElement(fieldSelect);
-    sidepanel.label("Values:");
-    sidepanel.addElement(valueList);
-
-    // on layerSelect change, update the fieldSelect list.
-    layerSelect.addEventListener("change", function () {
-      var layerId = parseInt(layerSelect.value, 10);
-      console.log('layer select value', layerId);
-      fieldSelect.innerHTML = "";
-      dataItems.filter(function (item) {
-        return item.id === layerId;
-      }).forEach(function (item) {
-        
-        if (!item || !item.fields || !item.fields.length) {
-          fieldSelect.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
-          fieldSelect.setAttribute("disabled", "disabled");
-          return;
-        } 
-        
-        var fields = item.fields.filter(isQueryableField);
-        if (fields.length === 0) {
-          fieldSelect.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
-          fieldSelect.setAttribute("disabled", "disabled");
-          return;
-        }
-
-        fieldSelect.removeAttribute("disabled");
-        fields.forEach(function (field) {
-          fieldSelect.appendChild(loadElement("OPTION", {"value": field.name}, field.alias));  
-        });
-        
-      });
-    });
-
-    // on fieldSelect change, update the values list
-    fieldSelect.addEventListener("change", function () {
-      var val = fieldSelect.value;
-      var layerId = layerSelect.value;
-      valueList.innerHTML = "";
-      ajax(url + "/" + layerId + "/query?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), function (res) {
-        if (!res || !res.features || res.features.length === 0) {
-          valueList.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
-          valueList.setAttribute("disabled", "disabled");
-        } else {
-          valueList.removeAttribute("disabled");
-          res.features.forEach(function (feature) {
-            var featureValue =  isNaN(feature.attributes[val] * 1) ? "'{0}'".replace("{0}", feature.attributes[val]) : feature.attributes[val];
-            valueList.appendChild(loadElement("option", {"value": featureValue}, feature.attributes[val]));
-          });  
-        }
-      });
-    });
-
-    // insert valid layers into layers input.
-    var layersBlank = document.querySelector("input[name = layers]");
-    if (layersBlank && !layersBlank.value) {
-      layersBlank.value = dataItems.filter(function (item) {
-        return !item.subLayers || item.subLayers.length === 0;
-      }).map(function (item) {
-        return item.id;
-      }).join(",");
-    }
-
-    listenAll(sidepanel.node, "select", "dblclick", function (evt) {
-      setActive(evt.currentTarget.value);
-    });
+      
+    
   }
 
   /**
    * Builds the Query Helper panel
    * @function queryHelper
    * @param {string} url - url of the query service.
-   * @param {object} data - JSON data from parent REST service
    */
-  function queryHelper(url, data) {
-    var sidepanel = new SidePanel("Query Helper"),
-      fieldSelect = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."}),
-      valueList = loadElement("SELECT", {"size": "6", "title": "Double-click to add to form."});
-    // set up side panel
-
-    sidepanel.note("Click field name to get up to 1000 examples. Double-click selections to add to form.");
+  function queryHelper(url) {
+    var sidepanel = new SidePanel("Query Helper");
+    
+    FieldSelector(url, sidepanel.node, function () {
+      addSqlControl(sidepanel.node);
+    
+      addStatisticsControl(sidepanel.node);
   
-    data.fields.filter(isQueryableField).forEach(function (field) {
-      fieldSelect.appendChild(loadElement("OPTION", {"value": field.name}, field.alias));  
-    });
-    sidepanel.addElement(fieldSelect);
-    sidepanel.addElement(valueList);
-    fieldSelect.addEventListener("change", function () {
-      var val = fieldSelect.value;
-      valueList.innerHTML = "";
-      ajax(url + "?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), function (res) {
-        if (!res || !res.features || res.features.length === 0) {
-          valueList.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
-          valueList.setAttribute("disabled", "disabled");
-        } else {
-          valueList.removeAttribute("disabled");
-          res.features.forEach(function (feature) {
-            var featureValue =  isNaN(feature.attributes[val] * 1) ? "'{0}'".replace("{0}", feature.attributes[val]) : feature.attributes[val];
-            valueList.appendChild(loadElement("option", {"value": featureValue}, feature.attributes[val]));
-            
-          });  
-        }
-      });
-    });
-    
-    addSqlControl(sidepanel.node);
-    
-    addStatisticsControl(sidepanel.node);
-
-    // add quick helpers
-    insertQuickFillinButton(sidepanel.node, "Select All *", { where: "1=1", outFields: "*", returnCountOnly: "false", returnGeometry: "true" }, true);
-    insertQuickFillinButton(sidepanel.node, "Select All but Geometry *", { where: "1=1", outFields: "*", returnCountOnly: "false", returnGeometry: "false" }, true);
-    insertQuickFillinButton(sidepanel.node, "Get Count Only *", { where: "1=1", returnDistinctValues: "false", returnCountOnly: "true", returnGeometry: "false" }, true);
-    insertQuickFillinButton(sidepanel.node, "Select Distinct", { where: "1=1", returnDistinctValues: "true", returnGeometry: "false"});
-
-    listenAll(sidepanel.node, "select", "dblclick", function (evt) {
-      setActive(evt.currentTarget.value);
-    });
-
-    insertDefaultWhereClause();
-    
+      // add quick helpers
+      insertQuickFillinButton(sidepanel.node, "Select All *", { where: "1=1", outFields: "*", returnCountOnly: "false", returnGeometry: "true" }, true);
+      insertQuickFillinButton(sidepanel.node, "Select All but Geometry *", { where: "1=1", outFields: "*", returnCountOnly: "false", returnGeometry: "false" }, true);
+      insertQuickFillinButton(sidepanel.node, "Get Count Only *", { where: "1=1", returnDistinctValues: "false", returnCountOnly: "true", returnGeometry: "false" }, true);
+      insertQuickFillinButton(sidepanel.node, "Select Distinct", { where: "1=1", returnDistinctValues: "true", returnGeometry: "false"});
+  
+      insertDefaultWhereClause();
+    }); 
   }
 
   chrome.extension.sendMessage({}, function(/*response*/) {
@@ -1195,12 +1235,11 @@
 
         // handling query page with quick query helpers
         if (queryTest.test(url)) {
-          ajax(url.replace(queryTest, "") + "?f=json", queryHelper.bind(this, url));
+          queryHelper(url.replace(queryTest, ""));
         }
         // todo: find page helper
         if (findTest.test(url)) {
-          var findBaseUrl = url.replace(findTest, "");
-          ajax(findBaseUrl + "/layers?f=json", findHelper.bind(this, findBaseUrl));
+          findHelper(url.replace(findTest, ""));
         }
 
         // todo: identify page helper
