@@ -984,7 +984,6 @@
      */
     this.updateFields = function (dataItems) {
       var layerId = parseInt(this.layerSelect.value, 10);
-      console.log("layer select value ", layerId);
       this.fieldSelect.innerHTML = "";
       dataItems.filter(function (item) {
         return item.id === layerId;
@@ -1015,12 +1014,9 @@
      */
     this.updateValues = function (url) {
       var val = this.fieldSelect.value;
-      console.log('fieldselect value', val);
       var layerId = this.layerSelect.value;
-      console.log('layerSelect value', layerId);
       this.valueList.innerHTML = "";
       ajax(url + "/" + layerId + "/query?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), function (res) {
-        console.log('results of query', res);
         if (!res || !res.features || res.features.length === 0) {
           this.valueList.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
           this.valueList.setAttribute("disabled", "disabled");
