@@ -914,7 +914,7 @@
    * @param {function} callback
    */
   function FieldSelector(url, parentNode, callback) {
-    var singleLayer = /server\/\d+\/?$/.test(url),
+    var singleLayer = /server\/\d+\/?$/i.test(url),
       jsonUrl = url + (singleLayer ? "" : "/layers") + "?f=json",
       helpMessage = "Click field name to get up to 1000 examples. Double-click selections to add to form.",
       helpMessageNode;
@@ -1015,13 +1015,22 @@
     this.updateValues = function (url) {
       var val = this.fieldSelect.value;
       var layerId = this.layerSelect.value;
-      this.valueList.innerHTML = "";
+      // loading of values
+      this.valueList.innerHTML = "<option value=''>Loading...</option>";
+      this.valueList.setAttribute("disabled", "disabled");
+      // stop additional clicks on fieldSelect from subsequent calls
+      this.fieldSelect.setAttribute("disabled", "disabled");
+      // request distinct values
       ajax(url + "/" + layerId + "/query?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), function (res) {
+        // re-enable fieldlist
+        this.fieldSelect.removeAttribute("disabled");
+        // test if features were returned.
         if (!res || !res.features || res.features.length === 0) {
-          this.valueList.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
+          this.valueList.innerHTML = "<option value=''>No values found for this field</option>";
           this.valueList.setAttribute("disabled", "disabled");
         } else {
           this.valueList.removeAttribute("disabled");
+          this.valueList.innerHTML = "";
           res.features.forEach(function (feature) {
             var featureValue =  isNaN(feature.attributes[val] * 1) ? "'{0}'".replace("{0}", feature.attributes[val]) : feature.attributes[val];
             this.valueList.appendChild(loadElement("option", {"value": featureValue}, feature.attributes[val]));
