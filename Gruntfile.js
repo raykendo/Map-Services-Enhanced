@@ -10,12 +10,18 @@ module.exports = function (grunt) {
       main: {
         files: [
           {
-            src: ["**", "!package.json", "!Gruntfile.js", "!.eslintrc.json", "!node_modules/**"],
-            dest: "C://Temp//Map_Services_Enhanced"
+            src: [
+              "**", 
+              "!dist/**", 
+              "!build/**", 
+              "!package.json", 
+              "!Gruntfile.js", 
+              "!.eslintrc.json", 
+              "!.gitignore",
+              "!node_modules/**"],
+            dest: "dist/"
           }
         ],
-        //verbose: true,
-        //pretend: true,
         failOnError: true,
         updateAndDelete: true
       }
@@ -23,12 +29,12 @@ module.exports = function (grunt) {
     compress: {
       main: {
         options: {
-          archive: "C:/Temp/MSE.zip"
+          archive: "build/Release/MSE.zip"
         },
         files: [
           {
             expand: true,
-            cwd: "C:/Temp/Map_Services_Enhanced/",
+            cwd: "dist/",
             src: ["**"]
           }
         ] 
@@ -39,7 +45,7 @@ module.exports = function (grunt) {
         expand: true,
         cwd: "src/",
         src: "**/*.js",
-        dest: "C:/Temp/Map_Services_Enhanced/src/",
+        dest: "dist/src/",
         ext: ".js"
       }
     }
