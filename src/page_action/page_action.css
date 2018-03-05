@@ -22,9 +22,11 @@ ul {
   padding: 0;
 }
 button {
+  border: 0;
+  background-color: #336;
+  font-weight: bold;
+  z-index: 100;
   color: #fff;
-  background-color: #028;
-  border: 1px solid #ccc;
   border-radius: 4px;
   padding: 4px 16px;
 }
