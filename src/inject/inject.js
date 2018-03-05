@@ -1144,8 +1144,9 @@
          * collect and present service data based on a list of urls.
          * @function collectData
          * @param {string[]} f - a list of urls to collect data on.
+         * @param {boolean} canCountFeatures - if true, count features.
          */
-        collectData = function (f) {
+        collectData = function (f, canCountFeatures) {
           if (!f.length) { return; }
           var data = f.shift();
           ajax(data.url + "?f=json",
@@ -1162,22 +1163,23 @@
               }
               
               // if the service has fields, get the layer count
-              if (response.fields && response.fields.length) {
+              if (response.fields && response.fields.length && canCountFeatures) {
                 getLayerCount(data.url, response, function (countList) {
                   tags[data.i].parentNode.appendChild(countList);
                 });
               }
               if (f.length) {
-                collectData(f);
+                collectData(f, canCountFeatures);
               }
             });
         };
 
         chrome.storage.sync.get({
-          autoMetadata: true
+          autoMetadata: true,
+          autoFeatureCounts: true
         }, function(items) {
           if (urls && urls.length && items.autoMetadata) {
-            collectData(urls);
+            collectData(urls, items.autoFeatureCounts);
           }
         });
         
@@ -1189,10 +1191,10 @@
                 domainFields, domainFieldHTML;
 
               chrome.storage.sync.get({
-                autoFeatureCounts: true,
+                autoFieldCounts: true,
                 autoDomainCounts: true
               }, function(items) {
-                if (items.autoFeatureCounts) {
+                if (items.autoFieldCounts) {
                   checkForNulls(url, results.fields.slice(0), fieldHTML.slice(0));
                 }
                 if (items.autoDomainCounts && results.fields.some(hasDomainTest)) {
