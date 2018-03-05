@@ -11,6 +11,7 @@
   function shortenUrl(url) {
     var defaultParams = {
         f: "html",
+        returnExtentsOnly: "false",
         returnIdsOnly: "false",
         geometryType: "esriGeometryEnvelope",
         spatialRel: "esriSpatialRelIntersects",
