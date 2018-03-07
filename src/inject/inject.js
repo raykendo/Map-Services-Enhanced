@@ -586,78 +586,6 @@
   }
 
   /**
-   * Switches a text blank for a select element if choices are present.
-   * @function swapInChoice
-   * @param {object[]} nodes - list of HTML DOM nodes for text blanks and textareas in the form
-   * @param {object} param - GP task parameters taken from REST Service.
-   */
-  function swapInChoice(nodes, param) {
-    if (!param.choiceList) {
-      return;
-    }
-
-    var nodesByName = nodes.filter(function (node) {
-      return node.name === param.name;
-    });
-
-    if (nodesByName && nodesByName.length > 0) {
-      nodesByName.forEach(function (nodeToReplace) {
-        var select = loadElement("select", {
-          "name": param.name
-        });
-        // generate options
-        param.choiceList.forEach(function(choice) {
-          var option = loadElement("option", {
-            value: choice
-          }, choice);
-          select.appendChild(option);
-        });
-        
-        select.value = param.defaultValue;
-        // replace existing node with select node.
-        nodeToReplace.parentNode.replaceChild(select, nodeToReplace);
-      });
-    }
-  }
-
-  /**
-   * Modifies the Geoprocessing form to make choices easier. 
-   * function updateGPForm
-   * @param {object} response
-   * @returns
-   */
-  function updateGPForm(response) {
-    var myForm, blanks = [];
-    if (!response.parameters) {
-      alert("Could not find GP parameters for this task.");
-      return;
-    }
-    try {
-      myForm = document.getElementsByTagName("FORM")[0];
-      // get TextAreas in form
-      blanks = Array.prototype.slice.call(myForm.getElementsByTagName("TEXTAREA"), 0);
-      // concat in list of inputs in the form
-      blanks = blanks.concat(Array.prototype.slice.call(myForm.getElementsByTagName("INPUT"), 0));
-      // for each parameter in the geoprocessing JSON, swap in choices 
-      response.parameters.forEach(swapInChoice.bind(this, blanks));
-      // look for Web_Map_as_JSON blank to fill in with default value.
-      blanks.some(function (blank) {
-        if (blank.name === "Web_Map_as_JSON" && /^\s*$/.test(blank.value)) {
-          chrome.storage.sync.get({
-            defaultWebMapAsJSON: ""
-          }, function(items) {
-            blank.value = items.defaultWebMapAsJSON;
-          });
-        }
-        return blank.name === "Web_Map_as_JSON";
-      });
-    } catch (err) {
-      console.error(err);
-      alert("invalid form");
-    }
-  }
-
-  /**
    * clears the input stored within the "active" variable.
    * @function clearActive
    */
@@ -1124,7 +1052,6 @@
           url = window.location.href.split("?")[0],
           queryTest = /\/query\/?$/i,
           findTest = /\/find\/?$/i,
-          printTaskTest = /\/(execute|submitjob)\/?$/i,
           urls;
 
         // search for map service links on the page
@@ -1234,11 +1161,6 @@
           tag.addEventListener("mouseover", hoverGetMap);
           tag.addEventListener("mouseout", hoverHideMap);
         });
-
-        // handling print task and other 
-        if (printTaskTest.test(url)) {
-          ajax(url.replace(printTaskTest, "") + "?f=json", updateGPForm);
-        }
 
         // handling query page with quick query helpers
         if (queryTest.test(url)) {

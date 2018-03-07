@@ -98,3 +98,9 @@
   font-weight: bold;
   background-color: #fcc;
 }
+
+textarea.hidden {
+    visibility: hidden;
+    height: 1px;
+    margin-top: -1px;
+}
