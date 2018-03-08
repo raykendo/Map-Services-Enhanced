@@ -1,5 +1,6 @@
 (function () {
   var url = window.location.href.split("?")[0];
+ 
   /**
    * requests data from a URL and returns it in JSON format
    * @function ajax
@@ -15,7 +16,12 @@
       x.setRequestHeader("X-Requested-With", "XMLHttpRequest");
       x.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
       x.onreadystatechange = function () {
-        x.readyState > 3 && callback && callback(JSON.parse(x.responseText), x);
+        var processedResponseText;
+        if (x.readyState > 3 && callback) {
+          // JSON.parse doesn't handle NaN values where numbers are supposed to go
+          processedResponseText = (x.responseText || "{}").replace(/:\s*NaN,/ig, ':"NaN",');
+          callback(JSON.parse(processedResponseText), x);
+        }
       };
       x.send(data);
     } catch (e) {

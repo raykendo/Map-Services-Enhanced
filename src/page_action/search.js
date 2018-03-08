@@ -7,7 +7,14 @@
     resultList = d.getElementById("searchresults"),
     locs, hits;
 		
-	// ajax function from https://gist.github.com/Xeoncross/7663273
+	/**
+   * requests data from a URL and returns it in JSON format
+   * @function ajax
+   * @param {string} u - URL to send the requests
+   * @param {function} callback - function to call when results are returned
+   * @param {object} [data] - optional information to send, triggers a post instead of a get requests
+   * @param {object} [x] - state of the application
+   */
   function ajax(u, callback, data, x) {
     try {
       x = new(this.XMLHttpRequest)("MSXML2.XMLHTTP.3.0");
@@ -15,13 +22,19 @@
       x.setRequestHeader("X-Requested-With", "XMLHttpRequest");
       x.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
       x.onreadystatechange = function () {
-        x.readyState > 3 && callback && callback(JSON.parse(x.responseText), x);
+        var processedResponseText;
+        if (x.readyState > 3 && callback) {
+          // JSON.parse doesn't handle NaN values where numbers are supposed to go
+          processedResponseText = (x.responseText || "{}").replace(/:\s*NaN,/ig, ':"NaN",');
+          callback(JSON.parse(processedResponseText), x);
+        }
       };
       x.send(data);
     } catch (e) {
       window.console && console.log(e);
     }
   }
+  
 	// get values of dot.notated.parameters out of a JSON object
 	// @param {string[]} fields - list of fields
 	// @param {object} data - JSON object.
