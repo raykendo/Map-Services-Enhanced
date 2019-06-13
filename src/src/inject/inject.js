@@ -1,8 +1,13 @@
-(function () {
-  // ajax function from https://gist.github.com/Xeoncross/7663273
-  var colorhash = {},
+{
+  let colorhash = {},
     active;
   
+  // Status effects
+  const STATUS = {
+    LOADING: "loading-start",
+    LOAD_COMPLETE: "loading-complete"
+  };
+
   /**
    * requests data from a URL and returns it in JSON format
    * @function ajax
@@ -11,25 +16,29 @@
    * @param {object} [data] - optional information to send, triggers a post instead of a get requests
    * @param {object} [x] - state of the application
    */
-  function ajax(u, callback, data, x) {
+  const ajax = (u, callback, data, x) => {
     try {
       x = new(this.XMLHttpRequest)("MSXML2.XMLHTTP.3.0");
       x.open(data ? "POST" : "GET", u, 1);
       x.setRequestHeader("X-Requested-With", "XMLHttpRequest");
       x.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-      x.onreadystatechange = function () {
-        var processedResponseText;
+      x.onreadystatechange = () => {
         if (x.readyState > 3 && callback) {
-          // JSON.parse doesn't handle NaN values where numbers are supposed to go
-          processedResponseText = (x.responseText || "{}").replace(/:\s*NaN,/ig, ':"NaN",');
-          callback(JSON.parse(processedResponseText), x);
+          try {
+            // JSON.parse doesn't handle NaN values where numbers are supposed to go
+            let processedResponseText = (x.responseText || "{}").replace(/:\s*NaN,/ig, ":\"NaN\",");
+            callback(JSON.parse(processedResponseText), x);
+          } catch (err) {
+            console && console.warn(u, x.responseText, err);
+          }
         }
       };
       x.send(data);
     } catch (e) {
       window.console && console.log(e);
     }
-  }
+  };
+
 
   /**
    * Changes a text value from camel-case to title case
@@ -37,9 +46,7 @@
    * @param {string} value - value to transform from camel case
    * @returns {string} - a string in title case form.
    */
-  function unCamelCase (value) {
-    return value.substr(0, 1).toUpperCase() + value.substr(1).replace(/([a-z])([A-Z])/g, "$1 $2");
-  }
+  const unCamelCase = (value) => value.substr(0, 1).toUpperCase() + value.substr(1).replace(/([a-z])([A-Z])/g, "$1 $2");
 
   /**
    * Creates an HTML element.
@@ -48,16 +55,16 @@
    * @param {object} attributes - name value object describing properties you want to assign to the object
    * @param {string} [text] - if present, this is the content you shoul add to the HTML element.
    */
-  function loadElement (tag, attributes, text) {
-    var el = document.createElement(tag), a;
-    for (a in attributes) {
+  const loadElement = (tag, attributes, text) => {
+    const el = document.createElement(tag);
+    for (let a in attributes) {
       el.setAttribute(a, attributes[a]);
     }
     if (text) {
       el.innerHTML = text;
     }
     return el;
-  }
+  };
 
   /**
    * Adds a list item to a node if the property is there and maybe if a property is true.
@@ -67,15 +74,15 @@
    * @param {string} [className] - if prsent, adds the class name to the list item
    * @returns {object} - list item node;
    */
-  function li(title, content, className) {
-    var node = loadElement("LI", {"class": className || ""});
+  const li = (title, content, className) => {
+    const node = loadElement("LI", {"class": className || ""});
     if (content === undefined) {
       node.innerHTML = ["<b>","</b>"].join(title);
     } else {
       node.innerHTML = ["<b>", title, ": </b>", (content instanceof Object ? JSON.stringify(content) : content)].join("");
     }
     return node;
-  }
+  };
 
   /**
    * Adds a list item to a node with the title of the property, and then itemizes ovoer the content object get all its properties
@@ -85,16 +92,15 @@
    * @param {string} [className] - if present, add this class name to the list item.
    * @returns {object} - list item node containing list of properties.
    */
-  function addSubList(title, content, className) {
-    var node = loadElement("LI", {"class": className || ""}, ["<b>",": </b>"].join(title)), 
-      ul = document.createElement("ul"), 
-      i;
-    for (i in content) {
+  const addSubList = (title, content, className) => {
+    const node = loadElement("LI", {"class": className || ""}, ["<b>",": </b>"].join(title)), 
+      ul = document.createElement("ul");
+    for (let i in content) {
       ul.appendChild(li(unCamelCase(i), content[i]));
     }
     node.appendChild(ul);
     return node;
-  }
+  };
 
   /**
    * Calculates a random color for a string value
@@ -102,18 +108,16 @@
    * @param {string} item - a string value
    * @returns {string} a CSS hex string for a color.
    */
-  function getColor(item) {
+  const getColor = (item) => {
     if (colorhash[item]) { return colorhash[item]; }
     colorhash[item] = "#" + (0x1000000 + (Math.random()) * 0xffffff).toString(16).substr(1, 6);
     return colorhash[item];
-  }
+  };
 
   /**
    * Returns whether a field is queryable
    */
-  function isQueryableField(field) {
-    return ["esriFieldTypeGeometry","esriFieldTypeBlob","esriFieldTypeXML","esriFieldTypeRaster"].indexOf(field.type) === -1;
-  }
+  const isQueryableField = (field) => ["esriFieldTypeGeometry","esriFieldTypeBlob","esriFieldTypeXML","esriFieldTypeRaster"].indexOf(field.type) === -1;
 
   /**
    * Calculates a complimentary shade or tint of a color to provide contrast
@@ -121,17 +125,16 @@
    * @param {string} item - a CSS hex string for a color
    * @returns {string} a CSS hext string for a color that is either lighter or darker than the current color.
    */
-  function getCompColor(item) {
-    var col = colorhash[item],
-      newcol = "",
+  const getCompColor = (item) => {
+    const col = colorhash[item],
       mid = [col.substr(1,1),col.substr(3,1),col.substr(5,1)].sort()[1],
-      coltbl = "fedcba98".indexOf(mid) > -1 ? "0000000001234567" : "89abcdefffffffff",
-      c;
-    for (c = 0; c < col.length; c++) {
+      coltbl = "fedcba98".indexOf(mid) > -1 ? "0000000001234567" : "89abcdefffffffff";
+    let newcol = "";
+    for (let c = 0; c < col.length; c++) {
       newcol += c%2 === 1 ? coltbl[parseInt(col.substr(c,1), 16)] : col.substr(c, 1);
     }
     return newcol;
-  }
+  };
 
   /**
    * Creates a node to display the spatial reference of a map service.
@@ -139,8 +142,8 @@
    * @param {object} data - JSON response from the map service.
    * @returns {object} an HTML DOM node with the spatial reference data.
    */
-  function showSpatialReferenceData(data) {
-    var val="&nbsp;No valid spatial reference available &nbsp;",
+  const showSpatialReferenceData  = (data) => {
+    let val="&nbsp;No valid spatial reference available &nbsp;",
       el = "span", 
       container = null,
       srnode = null, cachenode = null, sr;
@@ -170,51 +173,9 @@
     }
     
     return container;
-  }
+  };
 
-  /** */
-  function getMapDiv () {
-    var mapDiv = document.getElementById("mapdiv");
-
-    if (!mapDiv) {
-      var parentDiv = loadElement("DIV", {
-        style: "position:fixed;top:0;right:0;border:1px solid #ccc;z-index:10;padding:8px;background:#fff;"
-      });
-      document.body.appendChild(parentDiv);
-      mapDiv = loadElement("DIV", {
-        id: "mapdiv" 
-      });
-      parentDiv.appendChild(mapDiv);
-      parentDiv.appendChild(loadElement("P", {}, "Hover over a Map Service link to view it."));
-    }
-
-    return mapDiv;
-  }
-
-  /**
-   * On hover, get map
-   * @param {Event} evt 
-   */
-  function hoverGetMap (evt) {
-    if (!evt || !evt.target) {
-      return;
-    }
-    var url = evt.target.href;
-    if (!url) {
-      return;
-    }
-    console.log("hover get map:", url);
-    var getMap = false;
-    if (getMap) {
-      var mapDiv = getMapDiv();
-      mapDiv.innerHTML = "";
-    }
-    
-  }
-
-  function hoverHideMap () {
-    console.log("hover hide map");
-  }
+  
 
   /**
    * Error reporting
@@ -222,8 +183,8 @@
    * @param {error} err0r - error object returned.
    * @returns {object} an HTML node containing the error message.
    */
-  function reportError(err0r) {
-    var codeNumber = -99999;
+  const reportError = (err0r) => {
+    let codeNumber = -99999;
 
     if (err0r.hasOwnProperty("code")) {
       codeNumber = err0r.code;
@@ -249,7 +210,7 @@
     }
 
     return addSubList("Error", err0r, "error");
-  }
+  };
 
   /**
    * Creates a nested list to show service and layer metadata
@@ -257,14 +218,15 @@
    * @param {object} data - JSON response from the map service
    * @returns {object} an HTML DOM node with the formatted metadata list
    */
-  function showMetadata(data) {
-    var dF = document.createDocumentFragment(),
-      boolPreCheck = ["defaultVisibility", "isDataVersioned"],
-      ul, div;
+  const showMetadata = (data) => {
+    const dF = document.createDocumentFragment(),
+      boolPreCheck = ["defaultVisibility", "isDataVersioned"];
     if (data) {
-      div = loadElement("DIV", {"class": "datablock collapsed"});
+      const div = loadElement("DIV", {
+        "class": "datablock collapsed"
+      });
       div.appendChild(document.createElement("br"));
-      ul = document.createElement("ul");
+      const ul = document.createElement("ul");
       div.appendChild(ul);
 
       // handling errors
@@ -349,31 +311,31 @@
       }
 
       // show all data items where true, unless formatted value already available.
-      for (var item in data) {
+      for (let item in data) {
         if (typeof data[item] === "boolean" && data[item] && boolPreCheck.indexOf(item) === -1) {
           dF.appendChild(li(unCamelCase(item)));
         }
       }
       
       ul.appendChild(dF);
-      div.addEventListener("click", toggleCollapse.bind(div));
+      div.addEventListener("click", () => {toggleCollapse(div);});
 
       return div;
     }
     return null;
-  }
+  };
 
   /**
    * Queries for the feature count and the features with geometries
    * @function getLayerCount
    * @param {string} url - map service url
    * @param {object} data - the JSON data collected from the map service
-   * @param {function} cb - callback function once the query is complete.
+   * @param {function} callback - callback function once the query is complete.
    */
-  function getLayerCount(url, data, cb) {
-    var queryUrl = url + "/query?where=not+field+is+null&returnGeometry=false&returnCountOnly=true&f=json",
-      ul = document.createElement("ul"),
-      oid, shape;
+  const getLayerCount = (url, data, callback) => {
+    const queryUrl = url + "/query?where=not+field+is+null&returnGeometry=false&returnCountOnly=true&f=json",
+      ul = document.createElement("ul");
+    let oid, shape;
 
     if (data && data.hasOwnProperty("objectIdField") && data.objectIdField) {
       oid = data.objectIdField;
@@ -384,7 +346,7 @@
     }
     */
     if (data && data.hasOwnProperty("fields") && data.fields.length) {
-      data.fields.some(function (field) {
+      data.fields.some((field) => {
         switch(field.type) {
         case "esriFieldTypeOID":
         case "":
@@ -400,7 +362,7 @@
     }
 
     if (oid) {
-      ajax(queryUrl.replace(/\+field\+/g, ["+","+"].join(oid) ), function (response) {
+      ajax(queryUrl.replace(/\+field\+/g, ["+","+"].join(oid) ), (response) => {
         if (response.count !== undefined && response.count !== null) {
           ul.appendChild(li("Number of features", response.count ));
         }
@@ -413,7 +375,7 @@
     }
     
     if (shape) {
-      ajax(queryUrl.replace(/\+field\+/g, ["+", "+"].join(shape)), function (response) {
+      ajax(queryUrl.replace(/\+field\+/g, ["+", "+"].join(shape)), (response) => {
         if (response.count !== undefined && response.count !== null) {
           ul.appendChild(li("Features with shapes", response.count ));
         }
@@ -425,20 +387,21 @@
       ul.appendChild(li("No visible shape field available."));
     }
 
-    cb(ul);
-  }
+    callback(ul);
+  };
 
   /**
    * toggles the collapeable state of an element.
    * @function toggleCollapse
+   * @param {HTML} div
    */
-  function toggleCollapse() {
-    if (this.className.indexOf("collapsed") > -1) {
-      this.className = this.className.replace(" collapsed", "");
+  const toggleCollapse = (div) => {
+    if (div.className.indexOf("collapsed") > -1) {
+      div.className = div.className.replace(" collapsed", "");
     } else {
-      this.className += " collapsed";
+      div.className += " collapsed";
     }
-  }
+  };
 
   /**
    * Gets the time difference between the current time and the time presented
@@ -446,10 +409,10 @@
    * @param {number} timeValue - milliseconds since January 1, 1970 UTC 
    * @returns {string} - text display of seconds or milliseconds between now and time submitted.
    */
-  function responseTime (timeValue) {
-    var timeDiff = Date.now() - timeValue;
+  const responseTime = (timeValue) => {
+    const timeDiff = Date.now() - timeValue;
     return "" + (timeDiff > 1000 ? timeDiff / 1000 : timeDiff + "m") + "s";
-  }
+  };
 
   /**
    * gets a <b>old element previous to the current element
@@ -457,8 +420,8 @@
    * @param {object} node - HTML DOM node
    * @returns {string} - content fo the <b> tag prior to the node
    */
-  function getPreviousLabel(node) {
-    var h = node; 
+  const getPreviousLabel = (node) => {
+    let h = node; 
     while (h.previousSibling) { 
       h = h.previousSibling; 
       if (h.tagName === "B") {
@@ -466,24 +429,23 @@
       } 
     } 
     return h.innerHTML;
-  }
+  };
 
   /**
    * Finds where the fields are listed on the current web page.
    * @function getFieldList
    * returns {object[]} - list of list items containing field data.
    */
-  function getFieldList () {
-    var uls = document.getElementsByTagName("ul"),
-      labels = [].map.call(uls, getPreviousLabel),
-      i;
-    for (i = uls.length - 1; i > -1; i--) {
+  const getFieldList = () => {
+    const uls = document.getElementsByTagName("ul"),
+      labels = [].map.call(uls, getPreviousLabel);
+    for (let i = uls.length - 1; i > -1; i--) {
       if (/^Fields\:/.test(labels[i])) {
         return [].slice.call(uls[i].children, 0);
       }
     }
     return null;
-  }
+  };
 
   /**
    * Goes through each field in the list, requesting how many non-null values there are for that field.
@@ -492,34 +454,33 @@
    * @param {object[]} fields - list of JSON field data on that map service
    * @param {object[]} nodes - HTML DOM nodes corresponding to the fields in the other list.
    */
-  function checkForNulls(url, fields, nodes) {
-    if (!fields.length) { 
+  const checkForNulls = (url, fields, nodes) => {
+    if (!fields.length) {
+      updateStatus(STATUS.LOAD_COMPLETE); 
       return; 
     }
-    var field = fields.shift(),
+    const field = fields.shift(),
       node = nodes.shift(),
       params = "/query?where=not+field+is+null&returnGeometry=false&returnCountOnly=true&f=json".replace("field", field.name),
-      resultList = document.createElement("ul"), timeCheck;
+      resultList = document.createElement("ul");
     node.appendChild(resultList);
-    timeCheck = Date.now();
-    ajax(url + params,
-      function (response) {
-        var item = document.createElement("li"),
-          hasError = response.hasOwnProperty("error") && !!response.error,
-          newTimeCheck;
-        if (response.count !== undefined && response.count !== null) {
-          item.innerHTML =  ["<b>Features with values: </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(timeCheck),"</i>)"].join("");
-        } else if (hasError) {
-          item = reportError(response.error, field);
-        }
-        resultList.appendChild(item);
-        if (!hasError && field.type === "esriFieldTypeString") {
-          newTimeCheck = Date.now();
+    const timeCheck = Date.now();
+    ajax(url + params, (response) => {
+      const hasError = response.hasOwnProperty("error") && !!response.error;
+      let item = document.createElement("li");
+      if (response.count !== undefined && response.count !== null) {
+        item.innerHTML =  ["<b>Features with values: </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(timeCheck),"</i>)"].join("");
+      } else if (hasError) {
+        item = reportError(response.error, field);
+      }
+      resultList.appendChild(item);
+      if (!hasError && field.type === "esriFieldTypeString") {
+        const newTimeCheck = Date.now();
 
-          ajax(url + "/query?where=not+field+is+null+and+field+<>%27%27&returnGeometry=false&returnCountOnly=true&f=json".replace(/field/g, field.name), 
-            function (response2) {
-              var item2 = document.createElement("li"),
-                hasError = response2.hasOwnProperty("error") && !!response2.error;
+        ajax(url + "/query?where=not+field+is+null+and+field+<>%27%27&returnGeometry=false&returnCountOnly=true&f=json".replace(/field/g, field.name), 
+            (response2) => {
+              let item2 = document.createElement("li");
+              const hasError = response2.hasOwnProperty("error") && !!response2.error;
               if (response2.count !== undefined && response2.count !== null) {
                 item2.innerHTML = ["<b>Features without empty values: </b>", response2.count, (!response2.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(newTimeCheck),"</i>)"].join("");
               } else if (hasError) {
@@ -527,17 +488,15 @@
               }
               resultList.appendChild(item2);
 
-              if (fields.length) {
-                checkForNulls(url, fields, nodes);
-              }
+              checkForNulls(url, fields, nodes);
             }
           );
-        } else if (fields.length) {  
-          checkForNulls(url, fields, nodes); 
-        }
+      } else {
+        checkForNulls(url, fields, nodes); 
       }
+    }
     );
-  }
+  };
 
   /**
    * Queries domain values for each 
@@ -547,72 +506,68 @@
    * @param {object[]} nodes - list of HTML DOM nodes corresponding to the fields list
    * @param {object} [tr] - possible list to attach domain search results to.
    */
-  function checkDomains(url, fields, nodes, tr) {
-    if (!fields.length) { return; }
+  const checkDomains = (url, fields, nodes, tr) => {
+    if (!fields.length) { 
+      updateStatus(STATUS.LOAD_COMPLETE);
+      return; 
+    }
     if (!tr) {
-      var node = nodes.shift();
+      const node = nodes.shift();
       tr = document.createElement("ul");
       node.appendChild(tr);
     }
     if (fields[0].length) {
-      var item = fields[0].shift(),
+      const item = fields[0].shift(),
         value = item.type === "esriFieldTypeString" ? "'" + item.code + "'" : item.code,
         params = "/query?where=field+%3D+value&returnGeometry=false&returnCountOnly=true&f=json".replace("field", item.field).replace("value", value);
-      ajax(url + params,
-        function (response) {
-          var node = document.createElement("li"),
-            hasError = response.hasOwnProperty("error") && !!response.error;
-          if (response.count !== undefined && response.count !== null) {
-            node.innerHTML = ["<b>", item.name, ": </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>" : "")].join("");
-          } else if (hasError) {
-            node = reportError(response.error);
-          }
-          tr.appendChild(node);
-          if (fields[0].length) {  
-            checkDomains(url, fields, nodes, tr); 
+      ajax(url + params, (response) => {
+        let node = document.createElement("li");
+        const hasError = response.hasOwnProperty("error") && !!response.error;
+        if (response.count !== undefined && response.count !== null) {
+          node.innerHTML = ["<b>", item.name, ": </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>" : "")].join("");
+        } else if (hasError) {
+          node = reportError(response.error);
+        }
+        tr.appendChild(node);
+        if (fields[0].length) {  
+          checkDomains(url, fields, nodes, tr); 
+        } else {
+          fields.shift();
+          if (fields.length) {
+            checkDomains(url, fields, nodes);
           } else {
-            fields.shift();
-            if (fields.length) {
-              checkDomains(url, fields, nodes);
-            }
+            updateStatus(STATUS.LOAD_COMPLETE);
           }
-        });
+        }
+      });
+    } else {
+      updateStatus(STATUS.LOAD_COMPLETE);
     }
-  }
-
-  /**
-   * Tests whether some field JSON has a coded value domain
-   * @function hasDomainTest
-   * @param {object} field - JSON data related to a map service layer field.
-   * @returns {boolean} - if true, coded value domain is present.
-   */
-  function hasDomainTest(field) {
-    return !!field && field.domain && field.domain.codedValues;
-  }
+  };
 
   /**
    * clears the input stored within the "active" variable.
    * @function clearActive
    */
-  function clearActive() {
+  const clearActive = () => {
     if (active !== undefined && active !== null) {
       active.value = "";
     }
-  }
+  };
   
   /**
    * sets the value of the input stored in the "active" variable
    * @function setActive
    * @param {string} value - input to insert in the "active" input
    */
-  function setActive(value) {
+  const setActive = (value) => {
     if (active !== undefined) {
       // get cursor position
-      var oldVal = active.value.substring(0),
-        iCaretPos = oldVal.length;
+      const oldVal = active.value.substring(0);
+      let iCaretPos = oldVal.length;
       active.focus();
       if (document.selection) {
-        var oSel = document.selection.createRange();
+        const oSel = document.selection.createRange();
         oSel.moveStart("character", -active.value.length);
         iCaretPos = oSel.text.length;
       } else if ("selectionStart" in active) {
@@ -624,14 +579,14 @@
       // reset cursor position
       iCaretPos += value.length - (["()", "''"].indexOf(value) > -1);
       if (active.createTextRange) {
-        var range = active.createTextRange();
+        const range = active.createTextRange();
         range.move("character", iCaretPos);
         range.select();
       } else if ("selectionStart" in active) {
         active.setSelectionRange(iCaretPos, iCaretPos);
       }      
     }
-  }
+  };
 
   /**
    * Adds eventlisteners function to all nodes that match a querySelectorAll
@@ -641,267 +596,144 @@
    * @param {string} evt - event name
    * @param {function} callback - callback function when event occurs.
    */
-  function listenAll(node, selector, evt, callback) {
-    [].forEach.call(node.querySelectorAll(selector), function (el) {
-      el.addEventListener(evt, callback);
-    });
-  }
-
-  /**
-   * Inserts pre-defined data into a form on a page
-   * @function quickFormFillin
-   * @param {object} formData - JSON of name, value pairs to insert in the form
-   * @param {boolean} clickSubmit - if true, click the submit button
-   */
-  function quickFormFillin(formData, clickSubmit) {
-    var formFields = Array.prototype.slice.call(document.getElementsByTagName("INPUT"), 0);
-  
-    formFields = formFields.concat(Array.prototype.slice.call(document.getElementsByTagName("TEXTAREA"), 0));
-    
-    if (!formFields || formFields.length < 1) {
-      return;
-    }
-
-    formFields.forEach(function (item) {
-      if (formData.hasOwnProperty(item.name)) {
-        if (item.type && item.type === "radio" && formData[item.name] === item.value) {
-          item.checked = true;
-        } else {
-          item.value = formData[item.name];
-        }
-      }
-    });
-
-    if (clickSubmit) {
-      chrome.storage.sync.get({
-        queryHelperSelectAll: "get"
-      }, 
-      function (item) {
-        var submitButtons = document.querySelectorAll("input[type='submit']"),
-          submitButton;
-        switch(item.queryHelperSelectAll) {
-        case "get":
-          submitButton = submitButtons[0];
-          break;
-        case "post":
-          submitButton = submitButtons[1];
-          break;
-        }
-
-        if (submitButton) {
-          submitButton.click();
-        } 
-      });
-    }
-  }
-  
-  /**
-   * Inserts a button in a panel that will quickly fill in a form when clicked
-   * @function insertQuickFillinButton
-   * @param {object} parentElement - panel or element where the button will be added
-   * @param {string} content - Text inside the button
-   * @param {object} formData - JSON of name, value pairs to insert in the form
-   * @param {boolean} clickSubmit - if true, click the submit button
-   * 
-   */
-  function insertQuickFillinButton(parentElement, content, formData, clickSubmit) {
-    var buttonConfig = {type: "button"};
-    if (clickSubmit) {
-      buttonConfig.title = "Clicking here will auto-submit your request (see options for details)";
-    }
-    var quickBtn = loadElement("BUTTON", buttonConfig, content);
-    quickBtn.addEventListener("click", quickFormFillin.bind(this, formData, !!clickSubmit));
-    parentElement.appendChild(quickBtn);
-    parentElement.appendChild(document.createElement("br"));
-  }
-
-  /**
-   * Adds a statistic option to the outStatistics blank.
-   * @function addStatistic
-   * @param {string} statisticType - statistic type to collect from the service
-   * @returns {string}
-   */
-  function addStatistic(statisticType) {
-    if (!active || active.name !== "outStatistics") {
-      return;
-    }
-    var activeText = active.value,
-      statContent = [];
-    if (activeText.length) {
-      try {
-        statContent = JSON.parse(activeText);
-        if (!(statContent instanceof Array)) {
-          throw "Not a valid array";
-        }
-      } catch(err) {
-        statContent = [];
-      }
-    }
-
-    statContent.push({
-      "statisticType": statisticType,
-      "onStatisticField": "",
-      "outStatisticFieldName": ""
-    });
-
-    active.value = JSON.stringify(statContent);
-    return active.value;
-  }
-  
-  /**
-   * Adds statistics buttons to a side panel.
-   * @function addStatisticsControl
-   * @param {object} parentNode - HTML dom node of the sidepanel or whatever control you're adding
-   */
-  function addStatisticsControl (parentNode) {
-    ["Count", "Sum", "Min", "Max", "Avg", "StdDev", "Var"].forEach(function (stat) {
-      var btn = loadElement("BUTTON", {"type":"button", "class": "statistic", "style": "display:none;"}, stat);
-      btn.addEventListener("click", addStatistic.bind(this, stat.toLowerCase()));
-      parentNode.appendChild(btn);
-    });
-
-    // show/hide buttons on textbox focus
-    listenAll(document,  "input[type=text], textarea", "focus", function () {
-      var buttonNodes, i, il;
-
-      buttonNodes = document.querySelectorAll(".statistic");
-      il = buttonNodes.length;
-      for (i = 0; i < il; i++) {
-        if (this && this.name && this.name === "outStatistics") {
-          buttonNodes[i].style.display = "inline-block";
-        } else {
-          buttonNodes[i].style.display = "none";
-        }
-      }
-    });
-
-  }
-
-  /**
-   * Adds the SQL control buttons to the sidepanel.
-   * @function addSqlControl
-   * @param {object} parentNode - HTML dom node of the sidepanel or whatever control you're adding
-   */
-  function addSqlControl (parentNode) {
-    var btns = loadElement("DIV", {"class": "buttonbox"});
-     //[" = ", " &lt;&gt; ", " LIKE ", " &gt; ", " &gt;= ", " AND ", " &lt; ", " &lt;= ", " OR ", "_", "%", "()", "NOT ", " IS ", "*", "&#39;&#39;", " IN ", ", " ].forEach(function (txt) {
-    [" = ", " <> ", " LIKE ", " > ", " >= ", " AND ", " < ", " <= ", " OR ", "_", "%", "()", "NOT ", " IS ", "*", "''", " IN ", ", ", "NULL" ].forEach(function (txt) {
-      btns.appendChild(loadElement("button", {
-        "class": "sql",
-        "type": "button",
-        "name": txt
-      }, txt.replace(/\s+/g, "")));
-    });
-    parentNode.appendChild(btns);
-
-    listenAll(parentNode, "button.sql", "click", function (evt) {
-      setActive(evt.currentTarget.name);
-    });
-  }
+  const listenAll = (node, selector, evt, callback) => {
+    [].forEach.call(node.querySelectorAll(selector), (el) => el.addEventListener(evt, callback));
+  };
 
   /**
    * Represents the SidePanel
-   * @constructor
+   * @class SidePanel
    * @param {string} title title to add to the sidepanel
    * @property {object} node - HTML DOM node of the side panel.
    */
-  function SidePanel(title) { 
-    this.node = loadElement("DIV", {"class": "sidepanel"});
-    // insert title
-    var titlePanel = loadElement("DIV", {"class": "titlepanel"});
-    titlePanel.appendChild(loadElement("b", {}, title));
+  class SidePanel { 
+    constructor(title) {
+      this.node = loadElement("DIV", {"class": "sidepanel"});
+      // insert title
+      const titlePanel = loadElement("DIV", {"class": "titlepanel"});
+      titlePanel.appendChild(loadElement("b", {}, title));
 
-    // insert clear button
-    var clearBtn = loadElement("BUTTON", {"type": "button"}, "Clear");
-    clearBtn.addEventListener("click", clearActive);
-    titlePanel.appendChild(clearBtn);
+      // insert clear button
+      const clearBtn = loadElement("BUTTON", {"type": "button"}, "Clear");
+      clearBtn.addEventListener("click", clearActive);
+      titlePanel.appendChild(clearBtn);
 
-    this.node.appendChild(titlePanel);
+      this.node.appendChild(titlePanel);
 
-    // add events
-    listenAll(document, "input[type=text], textarea", "blur", function () { 
-      active = this;
-    });
+      // add events
+      listenAll(document, "input[type=text], textarea", "blur", function () { 
+        // no fat arrow b/c Active would become this sidepanel instead of an element
+        active = this;
+      });
 
-    document.body.appendChild(this.node);
+      document.body.appendChild(this.node);
+    }
+    /**
+     * @method addElement
+     * @param {HTML} node 
+     */
+    addElement(node) {
+      this.node.appendChild(node);
+    }
+    /**
+     * @method note
+     * @param {string} text 
+     */
+    note(text) {
+      this.addElement(loadElement("P", {}, text));
+    }
+    /**
+     * @method label
+     * @param {string} text 
+     */
+    label(text) {
+      this.addElement(loadElement("SPAN", {}, text));
+      this.addElement(loadElement("BR", {}));
+    }
   }
-
-  SidePanel.prototype.addElement = function (node) {
-    this.node.appendChild(node);
-  };
-
-  SidePanel.prototype.note = function (text) {
-    this.addElement(loadElement("P", {}, text));
-  };
-
-  SidePanel.prototype.label = function (text) {
-    this.addElement(loadElement("SPAN", {}, text));
-    this.addElement(loadElement("BR", {}));
-  };
 
   /**
    * Field Selector
-   * @constructor
-   * @param {string} url 
-   * @param {HTML} parentNode
-   * @param {function} callback
    */
-  function FieldSelector(url, parentNode, callback) {
-    var singleLayer = /server\/\d+\/?$/i.test(url),
-      jsonUrl = url + (singleLayer ? "" : "/layers") + "?f=json",
-      helpMessage = "Click field name to get up to 1000 examples. Double-click selections to add to form.",
-      helpMessageNode;
+  class FieldSelector {
+    /**
+     * @constructor
+     * @param {string} url 
+     * @param {HTML} parentNode
+     * @param {function} callback
+     */
+    constructor(url, parentNode, callback) {
+      const singleLayer = /server\/\d+\/?$/i.test(url),
+        jsonUrl = url + (singleLayer ? "" : "/layers") + "?f=json";
+      let helpMessage = "Click field name to get up to 1000 examples. Double-click selections to add to form.";
 
+      this.url = url;
+      this.parentNode = parentNode;
+
+      // update help message
+      if (!singleLayer) {
+        helpMessage = "Select layer to populate fields. " + helpMessage;
+      }
+      const helpMessageNode = loadElement("P", {}, helpMessage);
+      parentNode.appendChild(helpMessageNode);
+      
+      // get JSON data from service and build data afterward.
+      ajax(jsonUrl, this.buildRenderer.bind(this, callback));
+    
+    }
     /**
      * Renderer for the Field Selector
      * @param {function} callback - call this once the renderer has completed
      * @param {object|object[]} data 
      */
-    this.buildRenderer = function (callback, data) {
-      var dataItems, layerSelectorHeight;
+    buildRenderer(callback, data) {
+      const df = document.createDocumentFragment();
       if (!data) {
         return;
       }
       // collect layer data into a list
-      dataItems = (data.layers || []).concat(data.tables || []);
+      let dataItems = (data.layers || []).concat(data.tables || []);
       if (dataItems.length === 0) {
         dataItems = [data];
       }
       // filter out potential parent layers with no data.
-      dataItems = dataItems.filter(function (item) {
+      dataItems = dataItems.filter((item) => {
         return !item.subLayers || item.subLayers.length === 0;
       });
   
       //construct the layer selector
-      layerSelectorHeight = Math.min(dataItems.length, 5);
+      const layerSelectorHeight = Math.min(dataItems.length, 5);
       this.layerSelect = loadElement("SELECT", {"size": layerSelectorHeight.toString(), "title": "Double-click to add to form."}),
       this.fieldSelect = loadElement("SELECT", {"size": "5", "title": "Double-click to add to form."}),
       this.valueList = loadElement("SELECT", {"size": "5", "title": "Double-click to add to form."});
   
       // add layer options, even if there is just one
-      dataItems.forEach(function (item) {
+      dataItems.forEach((item) => {
         this.layerSelect.appendChild(loadElement("OPTION", {"value": item.id}, item.name || item.title));  
-      }, this);
+      });
   
       // if layer 
       if (dataItems.length === 1) {
         this.layerSelect.className = "hidden";
         this.updateFields(dataItems);
       } else {
-        parentNode.appendChild(loadElement("SPAN", {}, "Layers:"));
+        df.appendChild(loadElement("SPAN", {}, "Layers:"));
         // on layerSelect change, update the fieldSelect list.
         this.layerSelect.addEventListener("change", this.updateFields.bind(this, dataItems));
       }
-      parentNode.appendChild(this.layerSelect);
-      parentNode.appendChild(loadElement("SPAN", {}, "Fields:"));
-      parentNode.appendChild(this.fieldSelect);
-      parentNode.appendChild(loadElement("SPAN", {}, "Values:"));
-      parentNode.appendChild(this.valueList);
+      df.appendChild(this.layerSelect);
+      df.appendChild(loadElement("SPAN", {}, "Fields:"));
+      df.appendChild(this.fieldSelect);
+      df.appendChild(loadElement("SPAN", {}, "Values:"));
+      df.appendChild(this.valueList);
   
-      this.fieldSelect.addEventListener("change", this.updateValues.bind(this, url.replace(/\/\d*\/?$/, "")));
+      this.parentNode.appendChild(df);
+
+      this.fieldSelect.addEventListener("change", this.updateValues.bind(this, this.url.replace(/\/\d*\/?$/, "")));
     
       // apply double-click event listeners to fill in items.
-      listenAll(parentNode, "select", "dblclick", function (evt) {
+      listenAll(this.parentNode, "select", "dblclick", function (evt) {
+        // no fat arrow b/c Active would become this sidepanel instead of an element
         setActive(evt.currentTarget.value);
       });
 
@@ -909,18 +741,16 @@
       if (callback && typeof callback === "function") {
         callback(dataItems);
       }
-    };
+    }
 
     /**
      * Update the field items.
      * @param {object[]} dataItems 
      */
-    this.updateFields = function (dataItems) {
-      var layerId = parseInt(this.layerSelect.value, 10);
+    updateFields(dataItems) {
+      const layerId = parseInt(this.layerSelect.value, 10);
       this.fieldSelect.innerHTML = "";
-      dataItems.filter(function (item) {
-        return item.id === layerId;
-      }).forEach(function (item) {
+      dataItems.filter((item) => item.id === layerId).forEach((item) => {
         
         if (!item || !item.fields || !item.fields.length) {
           this.fieldSelect.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
@@ -928,76 +758,58 @@
           return;
         } 
         
-        var fields = item.fields.filter(isQueryableField);
+        const fields = item.fields.filter(isQueryableField);
         if (fields.length === 0) {
           this.fieldSelect.appendChild(loadElement("option", {"value": ""}, "No values found for this field"));
           this.fieldSelect.setAttribute("disabled", "disabled");
         } else {  
           this.fieldSelect.removeAttribute("disabled");
-          fields.forEach(function (field) {
-            this.fieldSelect.appendChild(loadElement("OPTION", {"value": field.name}, field.alias));  
-          }, this);
+          fields.forEach((field) =>this.fieldSelect.appendChild(loadElement("OPTION", {"value": field.name}, field.alias)));
         }
-      });
-    };
+      }, this);
+    }
 
     /**
      * Update the value items
      * @param {string} url
      */
-    this.updateValues = function (url) {
-      var val = this.fieldSelect.value;
-      var layerId = this.layerSelect.value;
+    updateValues(url) {
+      const val = this.fieldSelect.value;
+      const layerId = this.layerSelect.value;
       // loading of values
       this.valueList.innerHTML = "<option value=''>Loading...</option>";
+      updateStatus(STATUS.LOADING);
       this.valueList.setAttribute("disabled", "disabled");
       // stop additional clicks on fieldSelect from subsequent calls
       this.fieldSelect.setAttribute("disabled", "disabled");
       // request distinct values
-      ajax(url + "/" + layerId + "/query?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), function (res) {
-        // re-enable fieldlist
-        this.fieldSelect.removeAttribute("disabled");
-        // test if features were returned.
-        if (!res || !res.features || res.features.length === 0) {
-          this.valueList.innerHTML = "<option value=''>No values found for this field</option>";
-          this.valueList.setAttribute("disabled", "disabled");
-        } else {
-          this.valueList.removeAttribute("disabled");
-          this.valueList.innerHTML = "";
-          res.features.forEach(function (feature) {
-            var featureValue =  isNaN(feature.attributes[val] * 1) ? "'{0}'".replace("{0}", feature.attributes[val]) : feature.attributes[val];
-            this.valueList.appendChild(loadElement("option", {"value": featureValue}, feature.attributes[val]));
-          }, this);  
-        }
-      }.bind(this));
-    };
-
-    // update help message
-    if (!singleLayer) {
-      helpMessage = "Select layer to populate fields. " + helpMessage;
+      ajax(url + "/" + layerId + "/query?where=1%3D1&returnGeometry=false&outFields=field&orderByFields=field&returnDistinctValues=true&f=json".replace(/field/g, val), this._updateValuesCallback.bind(this));
     }
-    helpMessageNode = loadElement("P", {}, helpMessage);
-    parentNode.appendChild(helpMessageNode);
-
-    // get JSON data from service and build data afterward.
-    ajax(jsonUrl, this.buildRenderer.bind(this, callback));
-    
-  }
-
-  /** 
-   * Inserts a default where clause
-   */
-  function insertDefaultWhereClause() {
-    chrome.storage.sync.get({
-      defaultWhereClause: ""
-    }, function(items) {
-      var whereInput = document.querySelector("input[name = where]");
-      // if the where clause input is empty and the defaultWhereClause is not, add it in.
-      console.log("whereInput", whereInput);
-      if (whereInput && !whereInput.value && items.defaultWhereClause) {
-        whereInput.value = items.defaultWhereClause;
+    /**
+     * Updates values after query
+     * @param {*} res
+     * @private
+     */
+    _updateValuesCallback(res) {
+      const val = this.fieldSelect.value;
+      const df = document.createDocumentFragment();
+      // re-enable fieldlist
+      this.fieldSelect.removeAttribute("disabled");
+      // test if features were returned.
+      this.valueList.innerHTML = "";
+      if (!res || !res.features || res.features.length === 0) {
+        this.valueList.setAttribute("disabled", "disabled");
+        df.appendChild(loadElement("option", {value: ""}, "No values found for this field"));
+      } else {
+        this.valueList.removeAttribute("disabled");   
+        res.features.forEach((feature) => {
+          const featureValue = isNaN(feature.attributes[val] * 1) ? "'{0}'".replace("{0}", feature.attributes[val]) : feature.attributes[val];
+          df.appendChild(loadElement("option", {"value": featureValue}, feature.attributes[val]));
+        });  
       }
-    });
+      this.valueList.appendChild(df);
+      updateStatus(STATUS.LOAD_COMPLETE);
+    }
   }
 
   /**
@@ -1005,85 +817,72 @@
    * @function findHelper
    * @param {string} url
    */
-  function findHelper(url) {
-    var sidepanel = new SidePanel("Find Helper");
+  const findHelper = (url) => {
+    const sidepanel = new SidePanel("Find Helper");
     
-    FieldSelector(url, sidepanel.node, function (dataItems) {
+    new FieldSelector(url, sidepanel.node, (dataItems) => {
       // insert valid layers into layers input.
-      var layersBlank = document.querySelector("input[name = layers]");
+      const layersBlank = document.querySelector("input[name = layers]");
       if (layersBlank && !layersBlank.value) {
-        layersBlank.value = dataItems.filter(function (item) {
+        layersBlank.value = dataItems.filter((item) => {
           return !item.subLayers || item.subLayers.length === 0;
-        }).map(function (item) {
-          return item.id;
-        }).join(",");
+        }).map((item) => item.id).join(",");
       }
     });
-      
-    
-  }
+  };
+
 
   /**
-   * Builds the Query Helper panel
-   * @function queryHelper
-   * @param {string} url - url of the query service.
+   * Handle status updates
+   * @function updateStatus
+   * @param {string} status
    */
-  function queryHelper(url) {
-    var sidepanel = new SidePanel("Query Helper");
-    
-    FieldSelector(url, sidepanel.node, function () {
-      addSqlControl(sidepanel.node);
-    
-      addStatisticsControl(sidepanel.node);
-  
-      // add quick helpers
-      insertQuickFillinButton(sidepanel.node, "Select All *", { where: "1=1", outFields: "*", returnCountOnly: "false", returnGeometry: "true" }, true);
-      insertQuickFillinButton(sidepanel.node, "Select All but Geometry *", { where: "1=1", outFields: "*", returnCountOnly: "false", returnGeometry: "false" }, true);
-      insertQuickFillinButton(sidepanel.node, "Get Count Only *", { where: "1=1", returnDistinctValues: "false", returnCountOnly: "true", returnGeometry: "false" }, true);
-      insertQuickFillinButton(sidepanel.node, "Select Distinct", { where: "1=1", returnDistinctValues: "true", returnGeometry: "false"});
-  
-      insertDefaultWhereClause();
-    }); 
-  }
+  const updateStatus = (status) => {
+    chrome.runtime.sendMessage({MSE_STATUS: status}, response => console.log(response));
+  };
 
-  chrome.extension.sendMessage({}, function(/*response*/) {
-    var readyStateCheckInterval = setInterval(function() {
-      var collectData;
+  chrome.extension.sendMessage({}, (/*response*/) => {
+    let readyStateCheckInterval = setInterval(() => {
       if (document.readyState === "complete") {
         clearInterval(readyStateCheckInterval);
 
         // collect the links on the web page to collect information about the content they link to.
-        var tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0),
+        const tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0),
           url = window.location.href.split("?")[0],
-          queryTest = /\/query\/?$/i,
           findTest = /\/find\/?$/i,
-          urls;
-
-        // search for map service links on the page
-        urls = tags.map(function (tag, i) {
-          return {i: i, url: tag.href};
-        }).filter(function (item) {
+          // search for map service links on the page
+          urls = tags.map((tag, i) => {
+            return Object.create({}, {
+              i: {
+                value: i
+              },
+              url: {
+                value: tag.href
+              }
+            });
+          }).filter((item) => {
           // filter out links in the breadcrumbs section at the top of the page.
-          if (tags[item.i].parentNode.className === "breadcrumbs") {
-            return false;
-          }
-          return /(map|feature|image|mobile)server(\/\d*\/?)?$/i.test(item.url);
-        });
-
-        
-
+            if (tags[item.i].parentNode.className === "breadcrumbs") {
+              return false;
+            }
+            return /(map|feature|image|mobile)server(\/\d*\/?)?$/i.test(item.url);
+          });
+          
         /**
          * collect and present service data based on a list of urls.
          * @function collectData
          * @param {string[]} f - a list of urls to collect data on.
          * @param {boolean} canCountFeatures - if true, count features.
          */
-        collectData = function (f, canCountFeatures) {
-          if (!f.length) { return; }
-          var data = f.shift();
+        const collectData = (f, canCountFeatures) => {
+          if (!f || !f.length) {
+            updateStatus(STATUS.LOAD_COMPLETE);
+            return; 
+          }
+          const data = f.shift();
           ajax(data.url + "?f=json",
-            function (response) {
-              var spatialReferenceNode = showSpatialReferenceData(response),
+            (response) => {
+              const spatialReferenceNode = showSpatialReferenceData(response),
                 metadata = showMetadata(response);
               
               if (spatialReferenceNode !== null) {
@@ -1096,46 +895,49 @@
               
               // if the service has fields, get the layer count
               if (response.fields && response.fields.length && canCountFeatures) {
-                getLayerCount(data.url, response, function (countList) {
+                getLayerCount(data.url, response, (countList) => {
                   tags[data.i].parentNode.appendChild(countList);
                 });
               }
-              if (f.length) {
-                collectData(f, canCountFeatures);
-              }
+              collectData(f, canCountFeatures);
             });
         };
 
         chrome.storage.sync.get({
           autoMetadata: true,
           autoFeatureCounts: true
-        }, function(items) {
+        }, (items) => {
+          console.log(urls, items);
           if (urls && urls.length && items.autoMetadata) {
+            updateStatus(STATUS.LOADING);
             collectData(urls, items.autoFeatureCounts);
           }
         });
         
         // field and domain data counting.
         if (/(imageserver|\d+)\/?$/i.test(url)) {
-          ajax(url + "?f=json", function (results) {
+          ajax(url + "?f=json", (results) => {
             if (results && results.fields && results.fields.length > 0) {
-              var fieldHTML = getFieldList(),
-                domainFields, domainFieldHTML;
+              const fieldHTML = getFieldList();
+              const hasDomainTest = (field) => !!field && field.domain && field.domain.codedValues;
 
               chrome.storage.sync.get({
                 autoFieldCounts: true,
                 autoDomainCounts: true
-              }, function(items) {
+              }, (items) => {
+                const domainFields = [];
+                let domainFieldHTML;
                 if (items.autoFieldCounts) {
+                  updateStatus(STATUS.LOADING);
                   checkForNulls(url, results.fields.slice(0), fieldHTML.slice(0));
                 }
                 if (items.autoDomainCounts && results.fields.some(hasDomainTest)) {
-                  domainFields = [];
+                  
                   domainFieldHTML = fieldHTML.slice(0);
 
-                  results.fields.forEach(function (field, i) {
+                  results.fields.forEach((field, i) => {
                     if (hasDomainTest(field)) {
-                      domainFields.push(field.domain.codedValues.map(function (item) {
+                      domainFields.push(field.domain.codedValues.map((item) => {
                         // future reference: check if Object.assign supported by Chrome
                         item.field = field.name;
                         item.type = field.type;
@@ -1147,10 +949,8 @@
                   });
 
                   // filter out nulled out HTML nodes.
-                  domainFieldHTML = domainFieldHTML.filter(function (item) {
-                    return !!item;
-                  });
-
+                  domainFieldHTML = domainFieldHTML.filter((item) => !!item );
+                  updateStatus(STATUS.LOADING);
                   checkDomains(url, domainFields, domainFieldHTML, null);
                 }
               });
@@ -1159,18 +959,7 @@
           });
         }
 
-        // map display on hover
-        urls.forEach(function (item) {
-          var tag = tags[item.i];
 
-          tag.addEventListener("mouseover", hoverGetMap);
-          tag.addEventListener("mouseout", hoverHideMap);
-        });
-
-        // handling query page with quick query helpers
-        if (queryTest.test(url)) {
-          queryHelper(url.replace(queryTest, ""));
-        }
         // todo: find page helper
         if (findTest.test(url)) {
           findHelper(url.replace(findTest, ""));
@@ -1184,4 +973,4 @@
       }
     }, 10);
   });
-}());
+}

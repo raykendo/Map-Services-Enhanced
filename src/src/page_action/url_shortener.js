@@ -1,5 +1,5 @@
-(function () {
-  var shortenerBlank = document.getElementById("urlshortblank"),
+{
+  const shortenerBlank = document.getElementById("urlshortblank"),
     copyBtn = document.getElementById("copybtn");
 
   /**
@@ -8,54 +8,55 @@
    * @param {string} url 
    * @returns {string}
    */
-  function shortenUrl(url) {
-    var defaultParams = {
-        f: "html",
-        returnExtentsOnly: "false",
-        returnIdsOnly: "false",
-        geometryType: "esriGeometryEnvelope",
-        spatialRel: "esriSpatialRelIntersects",
-        returnTrueCurves: "false",
-        returnCountOnly: "false",
-        returnZ: "false",
-        returnM: "false",
-        returnDistinctValues: "false",
-        returnGeometry: "true"
-      }, item, defaultRegex;
-
-    // replace empty values
-    var emptyParamRegex = /(\?|\&)\w+\=(\&|$)/g;
-    while (emptyParamRegex.test(url)) {
-      url = url.replace(emptyParamRegex, "$1");
+  const shortenUrl = (url) => {
+    const defaultParams = {
+      f: "html",
+      returnExtentsOnly: "false",
+      returnIdsOnly: "false",
+      geometryType: "esriGeometryEnvelope",
+      spatialRel: "esriSpatialRelIntersects",
+      returnTrueCurves: "false",
+      returnCountOnly: "false",
+      returnZ: "false",
+      returnM: "false",
+      returnDistinctValues: "false",
+      returnGeometry: "true"
+    };
+    // replace empty query parameter values
+    while (/(\?|\&)\w+\=(\&|$)/g.test(url)) {
+      url = url.replace(/(\?|\&)\w+\=(\&|$)/g, "$1");
     }
 
     // replace default values:
-    for (item in defaultParams) {
-      defaultRegex = new RegExp(item + "=" + defaultParams[item], "ig");
+    for (let item in defaultParams) {
+      let defaultRegex = new RegExp(item + "=" + defaultParams[item], "ig");
       if (defaultRegex.test(url)) {
         url = url.replace(defaultRegex, "");
       }
     }
 
-    // replace multiple and values
-    var multiAndRegex = /\&{2,}/g;
-    while (multiAndRegex.test(url)) {
+    // replace multiple ampersand(&) values
+    while (/\&{2,}/g.test(url)) {
       url = url.replace(/\&+/g, "&");
     }
+    // replace ampersand(&) at end of the string with a blank
     while (/\&$/.test(url)) {
       url = url.replace(/\&$/, "");
     }
 
     return url;
-  }
+  };
   
   /**
    * Run this when current page loads
    * @function bootStrap
    */
-  function bootStrap() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      var url = tabs[0].url,
+  const bootStrap = () => {
+    chrome.tabs.query({
+      active: true, 
+      currentWindow: true
+    }, (tabs) => {
+      let url = tabs[0].url,
         shortened = shortenUrl(url);
       shortenerBlank.setAttribute("value", shortened);
 
@@ -66,25 +67,21 @@
         document.getElementById("urlshortcontent").style.display = "block";
       }
     });
-
-
-  }
+  };
   
   // copy the url to the clipboard when the copy url button is clicked.
-  copyBtn.addEventListener("click", function () {
+  copyBtn.addEventListener("click", () => {
     if (typeof shortenerBlank.select === "function") {
       shortenerBlank.select();
       document.execCommand("Copy");
       copyBtn.innerHTML = "Copied!";
       copyBtn.setAttribute("disabled", "disabled");
-      setTimeout(function () {
+      setTimeout(() => {
         copyBtn.innerHTML = "Copy to Clipboard";
         copyBtn.removeAttribute("disabled");
       }, 1000);
     }
   });
 
-  document.addEventListener("DOMContentLoaded", function() {
-    bootStrap();
-  });
-}());
+  document.addEventListener("DOMContentLoaded", () => bootStrap());
+}

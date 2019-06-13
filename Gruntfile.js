@@ -10,20 +10,14 @@ module.exports = function (grunt) {
       main: {
         files: [
           {
-            src: [
-              "**", 
-              "!dist/**", 
-              "!build/**", 
-              "!package.json", 
-              "!Gruntfile.js", 
-              "!.eslintrc.json", 
-              "!.gitignore",
-              "!node_modules/**"],
+            cwd: "src/",
+            src: ["**"],
             dest: "dist/"
           }
         ],
         failOnError: true,
-        updateAndDelete: true
+        updateAndDelete: true,
+        verbose: true
       }
     },
     compress: {

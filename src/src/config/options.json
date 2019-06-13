@@ -1,0 +1,82 @@
+{
+  "tools": [
+    {
+      "name": "Service Metadata",
+      "items": [
+        {
+          "type": "checkbox",
+          "property": "autoMetadata",
+          "label": "Auto-collect metadata on page load.",
+          "default": true
+        }
+      ]
+    },
+    {
+      "name": "Feature Counts",
+      "items": [
+        {
+          "type": "checkbox",
+          "property": "autoFeatureCounts",
+          "label": "Auto-collect feature counts on page load. <span><b>Warning:</b> Requires \"Auto-collect metadata on page load\" to be checked</span>",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "property": "autoFieldCounts",
+          "label": "Auto-collect field value counts on page load.",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "property": "autoDomainCounts",
+          "label": "Auto-collect domain counts on page load.",
+          "default": true
+        }
+      ]
+    },
+    {
+      "name": "Print Task",
+      "items": [
+        {
+          "type": "textarea",
+          "property": "defaultWebMapAsJSON",
+          "label": "Default Print Task WebMapAsJSON",
+          "default": "{\"operationalLayers\":[],\"baseMap\":{\"baseMapLayers\":[{\"id\":\"defaultBasemap\",\"opacity\":1,\"visibility\":true,\"url\":\"http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer\"}],\"title\":\"Topographic\"},\"exportOptions\":{\"dpi\":300,\"outputSize\":[1280,1024]}}"
+        }
+      ]
+    },
+    {
+      "name": "Query Helper",
+      "items": [
+        {
+          "type": "text",
+          "property": "defaultWhereClause",
+          "label": "Default where clause in query statements if space is blank",
+          "default": ""
+        },
+        {
+          "type": "radio",
+          "property": "queryHelperSelectAll",
+          "label": "Default action when clicking <b>Select All</b> or <b>Select all but Geometry</b>",
+          "default": "get",
+          "options": [
+            {
+              "value": "get",
+              "label": "Use GET request"
+            },
+            {
+              "value": "post",
+              "label": "Use POST request"
+            },
+            {
+              "value": "nothing",
+              "label": "Do Nothing"
+            }
+          ]
+          
+        }
+      ]
+    }
+    
+  ]
+}

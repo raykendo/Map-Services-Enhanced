@@ -1,0 +1,208 @@
+/**
+ * Place your custom CSS styles here.
+ **/
+.datablock {
+    padding: 2px;
+    background-color: white;
+    display: inline;
+}
+.datablock::before {
+    content: 'Click to hide details...';
+    color: #669;
+    cursor: pointer;
+    margin: 0 0 0 1em;
+}
+.datablock > ul {
+    border: solid 1px #669;
+    height: auto;
+    transition: height 0.5s ease;
+    margin: 0.3em 0;
+}
+.datablock.collapsed::before {
+    content: 'Click to show details...';
+}
+.collapsed > br,
+.collapsed > ul {
+    height: 0;
+    display: none;
+    border: 0;
+}
+
+.sidepanel,
+.buttonbox {
+    display: flex;
+    flex-flow: row wrap;
+}
+
+.sidepanel {
+    font-size: 0.875em;
+    position: fixed;
+    left: auto;
+    right: 0.5em;
+    width: 30%;
+    top: 5em;
+    /* bottom: 5em; */
+    border: 1px solid #669;
+    border-radius: 5px 0 0 5px;
+    background: white;
+    z-index: 100;
+    overflow: auto;
+    padding: 0.3em;
+}
+
+.titlepanel {
+    width: 100%;
+    display: inline-flex;
+    justify-content: space-between;
+}
+
+.titlepanel b {
+    margin: 0.5em 0 0.8em;
+}
+
+.sidepanel button,
+.status button[type=submit],
+.status buttton[type=button] {
+    font-size: 1.0em;
+    border: 0;
+    border-radius: 4px;
+    padding: 0.4em 0.8em;
+    margin:  0.2em 0.4em 0.2em 0;
+    background-color: #336;
+    color: White;
+    font-weight: bold;
+    z-index: inherit;
+}
+
+.status button[type=reset] {
+    font-size: 1.0em;
+    border: 0;
+    border-radius: 4px;
+    padding: 0.4em 0.8em;
+    margin:  0.2em 0.4em 0.2em 0;
+    font-weight: bold;
+    z-index: inherit;
+}
+
+.sidepanel p {
+    margin: 0.5em 0;
+}
+
+.sidepanel select {
+    width: 100%;
+}
+
+.sidepanel select.hidden {
+    visibility: hidden;
+    height: 1px;
+    margin-top: -1px;
+}
+
+.buttonbox {
+    justify-content: flex-start;
+    align-content: space-between;
+}
+.buttonbox > button {
+    width: 23%;
+}
+.error {
+  color: #d00;
+  font-weight: bold;
+  background-color: #fcc;
+}
+
+textarea.hidden {
+    visibility: hidden;
+    height: 1px;
+    margin-top: -1px;
+}
+
+.status {
+    position: fixed;
+    bottom: 22px;
+    right: 22px;
+    width: 50px;
+    height: 50px;
+    z-index: 999;
+    transition-property: width, height;
+    transition-duration: 0.8s;
+    overflow: hidden;
+    font-size: 0.75em;
+}
+
+.status.open {
+    width: 30%;
+    height: 50%;
+    max-height: 50%;
+    background: white;
+    border: 1px solid #336;
+    border-radius: 6px;
+    /* overflow: auto; */
+}
+
+.status div {
+    display: none;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+}
+
+.status.open div {
+    display:block;
+    overflow-y: auto;
+    bottom: 30px;
+}
+
+.status.open div:last-child {
+    bottom: 0;
+    top: auto;
+}
+
+@-webkit-keyframes spin { 
+    100% { 
+        -webkit-transform: rotate(360deg); 
+    } 
+}
+@keyframes spin { 
+    100% { 
+        -webkit-transform: rotate(360deg); 
+        transform:rotate(360deg); 
+    } 
+}
+
+.status .loading {
+    -webkit-animation:spin 1s linear infinite;
+    animation:spin 1s linear infinite;
+}
+
+.status textarea,
+.status input[type=text] {
+    width: 100%;
+}
+
+.status-icon {
+    float: right;
+    opacity: 0.5;
+    transition-property: opacity, height;
+    transition-duration: 0.5s;
+    width: 50px;
+    height: 50px;
+}
+
+.status-icon:hover {
+    opacity: 1.0;
+}
+
+.open .status-icon {
+    opacity: 0;
+    height: 0;
+}
+
+.status fieldset {
+    display: none;
+}
+.status.open fieldset {
+    display: block;
+}

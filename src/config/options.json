@@ -1,0 +1,82 @@
+{
+  "tools": [
+    {
+      "name": "Service Metadata",
+      "items": [
+        {
+          "type": "checkbox",
+          "label": "Auto-collect metadata on page load.",
+          "property": "autoMetadata",
+          "default": true
+        }
+      ]
+    },
+    {
+      "name": "Feature Counts",
+      "items": [
+        {
+          "type": "checkbox",
+          "label": "Auto-collect feature counts on page load.",
+          "warning": "Requires \"Auto-collect metadata on page load\" to be checked.",
+          "property": "autoFeatureCounts",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "label": "Auto-collect field value counts on page load.",
+          "property": "autoFieldCounts",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "label": "Auto-collect domain counts on page load.",
+          "property": "autoDomainCounts",
+          "default": true
+        }
+      ]
+    },
+    {
+      "name": "Print Task",
+      "items": [
+        {
+          "type": "textarea",
+          "label": "Default Print Task WebMapAsJSON:",
+          "property": "defaultWebMapAsJSON",
+          "default": "{\"operationalLayers\":[],\"baseMap\":{\"baseMapLayers\":[{\"id\":\"defaultBasemap\",\"opacity\":1,\"visibility\":true,\"url\":\"http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer\"}],\"title\":\"Topographic\"},\"exportOptions\":{\"dpi\":300,\"outputSize\":[1280,1024]}}"
+        }
+      ]
+    },
+    {
+      "name": "Query Helper",
+      "items": [
+        {
+          "type": "text",
+          "label": "Default where clause in query statements if space is blank.",
+          "property": "defaultWhereClause",
+          "placeholder": "Leave blank for no default",
+          "default": ""
+        },
+        {
+          "type": "radio",
+          "label": "On clicking <b>Select All</b> or <b>Select all but Geometry</b>...",
+          "property": "queryHelperSelectAll",
+          "default": "get",
+          "options": [
+            {
+              "label": "Query (GET)",
+              "value": "get"
+            },
+            {
+              "label": "Query (POST)",
+              "value": "post"
+            },
+            {
+              "label": "Do Nothing",
+              "value": "donothing"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
