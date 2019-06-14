@@ -1,4 +1,9 @@
 module.exports = function (grunt) {
+  const PKGJSON = require('./package.json');
+
+  /* use as desired */
+  const VERSION = PKGJSON.version.replace(/\./g, "_");
+
   grunt.initConfig({
     eslint: {
       options: {
@@ -23,7 +28,7 @@ module.exports = function (grunt) {
     compress: {
       main: {
         options: {
-          archive: "build/Release/MSE.zip"
+          archive: "build/Release/MSE_" + VERSION + ".zip"
         },
         files: [
           {
@@ -47,7 +52,7 @@ module.exports = function (grunt) {
 
   grunt.loadNpmTasks("grunt-eslint");
   grunt.loadNpmTasks("grunt-sync");
-  grunt.loadNpmTasks("grunt-contrib-uglify");
+  grunt.loadNpmTasks("grunt-contrib-uglify-es");
   grunt.loadNpmTasks("grunt-contrib-compress");
 
   grunt.registerTask("default", ["eslint", "sync", "uglify", "compress"]);
