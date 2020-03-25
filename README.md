@@ -13,9 +13,10 @@ The [Map Services Enhanced](https://github.com/raykendo/ArcGIS-REST-Enhanced) pr
 
 - Search REST endpoints for map layers, field names, and other service properties.
 - View metadata on multiple services without having to visit each one.
-- Collect the number of features in each map layer.
+- Collect feature count in each map layer.
 - Map service spatial references color coded for easy comparison.
 - Count results of each field and domain in a map service layer.
 - Create SQL queries with the click of a mouse.
 - Simplify map export service testing.
 - URL Shortener for query pages with unnecessarily long query parameter lists.
+- Map image viewer for previewing services.
