@@ -130,7 +130,7 @@
 
     renderForm(config) {
       if (!config.tools) {
-        alert('unable to load tools.');
+        alert("unable to load tools.");
         return;
       }
 
@@ -225,7 +225,7 @@
   
         chrome.storage.sync.get(storageItem, items => {
           radioBoxes.forEach(radioBox => {
-            console.log(radioBox.value, items[questionItem.property], questionItem.property);
+            //console.log(radioBox.value, items[questionItem.property], questionItem.property);
             if (radioBox.value === items[questionItem.property]) {
               radioBox.checked = true;
             }
@@ -242,6 +242,23 @@
         });
         parentNode.appendChild(label);
         parentNode.appendChild(blank);
+        chrome.storage.sync.get(storageItem, items => {
+          blank.value = items[questionItem.property];
+        });
+        break;
+      }
+      case "number": {
+        let label = loadElement("P", {}, questionItem.label);
+        let blank = loadElement("INPUT", {
+          type: "number",
+          name: questionItem.property,
+          placeholder: questionItem.placeholder || ""
+        });
+        parentNode.appendChild(label);
+        parentNode.appendChild(blank);
+        if (!isLastItem) {
+          parentNode.appendChild(loadElement("BR"));
+        }
         chrome.storage.sync.get(storageItem, items => {
           blank.value = items[questionItem.property];
         });
@@ -279,8 +296,8 @@
         checkboxes = this.domNode.querySelectorAll("input[type=checkbox]"),
         radioboxes = this.domNode.querySelectorAll("input[type=radio]:checked"),
         textboxes = this.domNode.querySelectorAll("input[type=text]"),
-        textareas = this.domNode.querySelectorAll("textarea");
-      
+        textareas = this.domNode.querySelectorAll("textarea"),
+        numberboxes = this.domNode.querySelectorAll("input[type=number]");
         // save properties
 
       if (checkboxes && checkboxes.length) {
@@ -304,6 +321,12 @@
       if (textareas && textareas.length) {
         [].forEach.call(textareas, blank => {
           dataToSave[blank.name] = blank.value;
+        });
+      }
+
+      if (numberboxes && numberboxes.length) {
+        [].forEach.call(numberboxes, blank => {
+          dataToSave[blank.name] = parseInt(blank.value, 10);
         });
       }
 

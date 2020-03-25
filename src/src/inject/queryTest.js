@@ -538,7 +538,11 @@
    * @param {string} status
    */
   const updateStatus = (status) => {
-    chrome.runtime.sendMessage({MSE_STATUS: status}, response => console.log(response));
+    try {
+      chrome.runtime.sendMessage({MSE_STATUS: status});
+    } catch (err) {
+      // do nothing
+    }
   };
 
   chrome.extension.sendMessage({}, function(/*response*/) {

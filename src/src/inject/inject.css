@@ -206,3 +206,36 @@ textarea.hidden {
 .status.open fieldset {
     display: block;
 }
+.map-image-panel {
+    position:fixed;
+    top:0;
+    right:0;
+    border:1px solid #bbb;
+    z-index:10;
+    padding: 0;
+    background:#fff;
+    width: 20%;
+    height: 20%;
+    overflow: visible;
+    display: table-cell;
+    vertical-align: bottom;
+    text-align: center;
+}
+
+.map-image-panel > img {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.map-image-panel > img.none {
+    height: 50%;
+}
+
+.map-image-panel > p {
+    text-align: center;
+    size: 0.8em;
+}
+
+
+

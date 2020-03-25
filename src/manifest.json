@@ -1,7 +1,7 @@
 {
   "name": "Map Services Enhanced",
   "short_name": "Map Services Enhanced",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "manifest_version": 2,
   "description": "An extension for analyzing, interrogating, and troubleshooting ArcGIS REST Services.",
   "homepage_url": "https://github.com/raykendo/Map-Services-Enhanced",
@@ -40,7 +40,8 @@
       ],
       "js": [
         "src/inject/inject.js",
-        "src/inject/status.js"
+        "src/inject/status.js",
+        "src/inject/mapImages.js"
       ]
     },
     {

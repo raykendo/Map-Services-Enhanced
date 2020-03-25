@@ -8,7 +8,9 @@
       autoDomainCounts: document.getElementById("domaincounts").checked,
       defaultWebMapAsJSON: document.getElementById("defaultwebmapasjson").value,
       queryHelperSelectAll: document.querySelector("input[name = \"queryhelperselectall\"]:checked").value,
-      defaultWhereClause: document.getElementById("defaultwhereclause").value
+      defaultWhereClause: document.getElementById("defaultwhereclause").value,
+      mapImageWidth: parseInt(document.getElementById("mapimagewidth").value, 10),
+      mapImageHeight: parseInt(document.getElementById("mapimageheight").value, 10)
     }, () => {
     // Update status to let user know options were saved.
       const button = document.getElementById("save");
@@ -33,7 +35,9 @@
       autoDomainCounts: true,
       defaultWebMapAsJSON: "{\"operationalLayers\":[],\"baseMap\":{\"baseMapLayers\":[{\"id\":\"defaultBasemap\",\"opacity\":1,\"visibility\":true,\"url\":\"http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer\"}],\"title\":\"Topographic\"},\"exportOptions\":{\"dpi\":300,\"outputSize\":[1280,1024]}}",
       queryHelperSelectAll: "get",
-      defaultWhereClause: ""
+      defaultWhereClause: "",
+      mapImageWidth: 300,
+      mapImageHeight: 200
     }, (items) => {
       const metaDataCheck = document.getElementById("metadata"),
         featureCountsCheck = document.getElementById("featurecounts");
@@ -45,6 +49,8 @@
       document.getElementById("defaultwebmapasjson").value = items.defaultWebMapAsJSON;
       document.getElementById("defaultwhereclause").value = items.defaultWhereClause;
       document.querySelector("input[name = \"queryhelperselectall\"][value=\"" + items.queryHelperSelectAll + "\"]").checked = true;
+      document.getElementById("mapimagewidth").value = items.mapImageWidth;
+      document.getElementById("mapimageheight").value = items.mapImageHeight;
 
     // update auto meta data behavior with update feature counts.
       if (!items.autoMetadata) {

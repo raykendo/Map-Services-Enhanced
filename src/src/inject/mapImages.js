@@ -1,4 +1,102 @@
 {
+  const IMAGE_LOOKUP = {};
+  const NO_IMAGE_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    // Status effects
+  const STATUS = {
+    LOADING: "loading-start",
+    LOAD_COMPLETE: "loading-complete"
+  };
+  const WIDTH_HEIGHT = {
+    width: 300,
+    height: 200
+  };
+
+  // 
+  const reqStatus = (response) => {
+    if (response.status >= 200 && response.status < 300) {
+      return Promise.resolve(response);
+    } else {
+      return Promise.reject(new Error(response.statusText));
+    }
+  };
+
+  const getJSON = (response) => response.json();
+
+  const getMapBBOX = (url) => {
+    return new Promise((resolve, reject) => {
+      fetch(url + "?f=json")
+        .then(reqStatus)
+        .then(getJSON)
+        .then((data) => {
+          let extent = [];
+          if ("initialExtent" in data) {
+            extent = [data.initialExtent.xmin, data.initialExtent.ymin, data.initialExtent.xmax, data.initialExtent.ymax];
+          } else if ("fullExtent" in data) {
+            extent = [data.fullExtent.xmin, data.fullExtent.ymin, data.fullExtent.xmax, data.fullExtent.ymax];
+          }
+          if (extent.length === 4) {
+            resolve(extent.join(","));
+          }
+          else {
+            reject("Invalid extent length: " + extent.length);
+          }
+          
+        })
+        .catch((err) => {
+          window.console && console.log("Fetch Error :-S", err);
+          reject(err);
+        });
+    });
+  };
+  /**
+   * @function getMapImageUrl
+   * @param {string} url - link url
+   * @returns {string} url string for the image link.
+   */
+  const getMapImageUrl = (url) => {
+    return new Promise((resolve, reject) => {
+      if (url in IMAGE_LOOKUP) {
+        resolve(IMAGE_LOOKUP[url]);
+      }
+      
+      if (/[^/]$/.test(url)) {
+        url = url + "/";
+      }
+  
+      getMapBBOX(url)
+        .then((bbox) => {
+          let exportUrl = url;
+          if (/\/mapserver\/$/i.test(url)) {
+            exportUrl += "export?size=" + WIDTH_HEIGHT["width"] + "," + WIDTH_HEIGHT["height"] + "&format=png32&f=json&bbox=" + bbox;
+            return fetch(exportUrl);
+          } else if (/\/featureserver\/$/i.test(url)) {
+            // try replacing feature server with map server
+            exportUrl = exportUrl.replace(/\/featureserver\/$/i, "/MapServer/");
+            exportUrl += "export?size=" + WIDTH_HEIGHT["width"] + "," + WIDTH_HEIGHT["height"] + "&format=png32&f=json&bbox=" + bbox;
+            return fetch(exportUrl);
+          } else if (/\/imageserver\/$/i.test(url)) {
+            exportUrl += "exportImage?bbox=" + bbox + "&size=" + WIDTH_HEIGHT["width"] + "," + WIDTH_HEIGHT["height"] + "&format=jpgpng&f=json";
+            return fetch(exportUrl);
+          } else {
+            return Promise.reject("Invalid service type: " + url);
+          }
+        })
+        .then(reqStatus)
+        .then(getJSON)
+        .then((data) => {
+          if ("href" in data) {
+            IMAGE_LOOKUP[url] = data["href"];
+            resolve(IMAGE_LOOKUP[url]);
+          } else {
+            window.console && console.log("unexpected data error: ", url, data);
+            reject("no data found");
+          }
+        })
+        .catch(function (err) {
+          reject(err);
+        });
+    });
+  };
 
   /**
    * Creates an HTML element.
@@ -18,27 +116,6 @@
     return el;
   };
 
-  /** 
-   * Get the map div for the map viewer
-   */
-  const getMapDiv = () => {
-    let mapDiv = document.getElementById("mapdiv");
-
-    if (!mapDiv) {
-      const parentDiv = loadElement("DIV", {
-        style: "position:fixed;top:0;right:0;border:1px solid #ccc;z-index:10;padding:8px;background:#fff;"
-      });
-      document.body.appendChild(parentDiv);
-      mapDiv = loadElement("DIV", {
-        id: "mapdiv" 
-      });
-      parentDiv.appendChild(mapDiv);
-      parentDiv.appendChild(loadElement("P", {}, "Hover over a Map Service link to view it."));
-    }
-
-    return mapDiv;
-  };
-
   /**
    * On hover, get map
    * @param {Event} evt 
@@ -51,51 +128,100 @@
     if (!url) {
       return;
     }
-    console.log("hover get map:", url);
-    let getMap = false;
-    if (getMap) {
-      const mapDiv = getMapDiv();
-      mapDiv.innerHTML = "";
-    }
+    
+    updateStatus(STATUS.LOADING);
+    getMapImageUrl(url)
+      .then((href) => {
+        let mapImage = document.getElementById("mapimage");
+        mapImage.setAttribute("src", href);
+        mapImage.classList.remove("none");
+        updateStatus(STATUS.LOAD_COMPLETE);
+      }).catch(() => {
+        window.console && console.log("Error getting image url from: " + url);
+        hoverHideMap();
+        updateStatus(STATUS.LOAD_COMPLETE);
+      });
   };
 
   const hoverHideMap = () => {
-    console.log("hover hide map");
+    let mapImage = document.getElementById("mapimage");
+    mapImage.setAttribute("src",NO_IMAGE_SRC);
+    mapImage.classList.add("none");
   };
 
+  /**
+   * Handle status updates
+   * @function updateStatus
+   * @param {string} status
+   */
+  const updateStatus = (status) => {
+    try {
+      chrome.runtime.sendMessage({MSE_STATUS: status});
+    } catch (err) {
+      // do nothing
+    }
+  };
 
-  chrome.extension.sendMessage({}, (/*response*/) => {
+  const constructImageContainer = () => {    
+    chrome.storage.sync.get({
+      mapImageWidth: 300,
+      mapImageHeight: 200
+    }, (items) => {
+      // update map image widht and height
+      WIDTH_HEIGHT["width"] = items.mapImageWidth;
+      WIDTH_HEIGHT["height"] = items.mapImageHeight;
+      // construct parent container.
+      let parentDiv = loadElement("DIV", {
+        "class": "map-image-panel",
+        "style": "min-width:" + items.mapImageWidth + "px;min-height:" + (items.mapImageHeight + 30) + "px;"
+      });
+      let mapDiv = loadElement("IMG", {
+        id: "mapimage",
+        src: NO_IMAGE_SRC,
+        alt: "Map image goes here",
+        "class": "none"
+      });
+      parentDiv.appendChild(mapDiv);
+      parentDiv.appendChild(loadElement("P", {"style": "margin:2px 0;padding:0;"}, "Hover over a link to view."));
+      document.body.appendChild(parentDiv);
+    });
+  };
+
+  chrome.extension.sendMessage({}, (/*response*/) => {    
     let readyStateCheckInterval = setInterval(() => {
       if (document.readyState === "complete") {
         clearInterval(readyStateCheckInterval);
-
         // collect the links on the web page to collect information about the content they link to.
-        const tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0),
-          urls = tags.map((tag, i) =>  {
-            return Object.create({}, {
-              i: {
-                value: i
-              },
-              url: {
-                value: tag.url
-              }
-            });
-          }).filter((item) => {
-          // filter out links in the breadcrumbs section at the top of the page.
-            if (tags[item.i].parentNode.className === "breadcrumbs") {
-              return false;
+        const tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0);
+        const urls = tags.map((tag, index) =>  {
+          return Object.create({}, {
+            i: {
+              value: index
+            },
+            url: {
+              value: tag.href
             }
-            return /(map|feature|image|mobile)server(\/\d*\/?)?$/i.test(item.url);
           });
-
-        // map display on hover
-        urls.forEach((item) => {
-          const tag = tags[item.i];
-
-          tag.addEventListener("mouseover", hoverGetMap);
-          tag.addEventListener("mouseout", hoverHideMap);
+        }).filter((item) => {
+          // filter out links in the breadcrumbs section at the top of the page.
+          if (tags[item.i].parentNode.className === "breadcrumbs") {
+            return false;
+          }
+          return /(map|image)server\/?$/i.test(item.url);
         });
 
+        if (urls.length > 0) {
+          // construct 
+          constructImageContainer();
+
+          // map display on hover
+          urls.forEach((item) => {
+            const tag = tags[item.i];
+
+            tag.addEventListener("mouseover", hoverGetMap);
+          });
+        }
+        
       }
     }, 10);
   });

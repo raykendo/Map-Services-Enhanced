@@ -76,7 +76,23 @@
           
         }
       ]
+    },
+    {
+      "name": "Map Image",
+      "items": [
+        {
+          "type": "number",
+          "property": "mapImageWidth",
+          "label": "Minimum Map Image Width",
+          "default": 300
+        },
+        {
+          "type": "number",
+          "property": "mapImageHeight",
+          "label": "Minimum Map Image Height",
+          "default": 200
+        }
+      ]
     }
-    
   ]
 }
