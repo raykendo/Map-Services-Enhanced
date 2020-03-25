@@ -82,6 +82,12 @@
       "name": "Map Image",
       "items": [
         {
+          "type": "checkbox",
+          "property": "showMapImages",
+          "label": "Show Map Images on hover",
+          "default": true
+        },
+        {
           "type": "number",
           "property": "mapImageWidth",
           "label": "Minimum Map Image Width",

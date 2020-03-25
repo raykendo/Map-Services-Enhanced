@@ -178,7 +178,8 @@ textarea.hidden {
 }
 
 .status textarea,
-.status input[type=text] {
+.status input[type=text],
+.status input[type=number] {
     width: 100%;
 }
 
@@ -236,6 +237,3 @@ textarea.hidden {
     text-align: center;
     size: 0.8em;
 }
-
-
-

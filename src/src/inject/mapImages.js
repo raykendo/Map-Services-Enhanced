@@ -187,41 +187,50 @@
     });
   };
 
+  const setup = () => {
+    const tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0);
+    const urls = tags.map((tag, index) =>  {
+      return Object.create({}, {
+        i: {
+          value: index
+        },
+        url: {
+          value: tag.href
+        }
+      });
+    }).filter((item) => {
+      // filter out links in the breadcrumbs section at the top of the page.
+      if (tags[item.i].parentNode.className === "breadcrumbs") {
+        return false;
+      }
+      return /(map|image)server\/?$/i.test(item.url);
+    });
+
+    if (urls.length > 0) {
+      // construct 
+      constructImageContainer();
+
+      // map display on hover
+      urls.forEach((item) => {
+        const tag = tags[item.i];
+
+        tag.addEventListener("mouseover", hoverGetMap);
+      });
+    }
+  };
+
   chrome.extension.sendMessage({}, (/*response*/) => {    
     let readyStateCheckInterval = setInterval(() => {
       if (document.readyState === "complete") {
         clearInterval(readyStateCheckInterval);
         // collect the links on the web page to collect information about the content they link to.
-        const tags = Array.prototype.slice.call(document.getElementsByTagName("a"), 0);
-        const urls = tags.map((tag, index) =>  {
-          return Object.create({}, {
-            i: {
-              value: index
-            },
-            url: {
-              value: tag.href
-            }
-          });
-        }).filter((item) => {
-          // filter out links in the breadcrumbs section at the top of the page.
-          if (tags[item.i].parentNode.className === "breadcrumbs") {
-            return false;
+        chrome.storage.sync.get({
+          showMapImages: true
+        }, (items) => {
+          if (items.showMapImages) {
+            setup();
           }
-          return /(map|image)server\/?$/i.test(item.url);
-        });
-
-        if (urls.length > 0) {
-          // construct 
-          constructImageContainer();
-
-          // map display on hover
-          urls.forEach((item) => {
-            const tag = tags[item.i];
-
-            tag.addEventListener("mouseover", hoverGetMap);
-          });
-        }
-        
+        }); 
       }
     }, 10);
   });

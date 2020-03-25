@@ -9,6 +9,7 @@
       defaultWebMapAsJSON: document.getElementById("defaultwebmapasjson").value,
       queryHelperSelectAll: document.querySelector("input[name = \"queryhelperselectall\"]:checked").value,
       defaultWhereClause: document.getElementById("defaultwhereclause").value,
+      showMapImages: document.getElementById("showmapimages").checked,
       mapImageWidth: parseInt(document.getElementById("mapimagewidth").value, 10),
       mapImageHeight: parseInt(document.getElementById("mapimageheight").value, 10)
     }, () => {
@@ -36,6 +37,7 @@
       defaultWebMapAsJSON: "{\"operationalLayers\":[],\"baseMap\":{\"baseMapLayers\":[{\"id\":\"defaultBasemap\",\"opacity\":1,\"visibility\":true,\"url\":\"http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer\"}],\"title\":\"Topographic\"},\"exportOptions\":{\"dpi\":300,\"outputSize\":[1280,1024]}}",
       queryHelperSelectAll: "get",
       defaultWhereClause: "",
+      showMapImages: true,
       mapImageWidth: 300,
       mapImageHeight: 200
     }, (items) => {
@@ -49,6 +51,7 @@
       document.getElementById("defaultwebmapasjson").value = items.defaultWebMapAsJSON;
       document.getElementById("defaultwhereclause").value = items.defaultWhereClause;
       document.querySelector("input[name = \"queryhelperselectall\"][value=\"" + items.queryHelperSelectAll + "\"]").checked = true;
+      document.getElementById("showmapimages").checked = items.showMapImages;
       document.getElementById("mapimagewidth").value = items.mapImageWidth;
       document.getElementById("mapimageheight").value = items.mapImageHeight;
 

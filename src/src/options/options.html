@@ -7,10 +7,10 @@
       display: block;
       width: 100%;
     }
-    input[type=text], textarea {
+    input[type=text], input[type=number], textarea {
       box-sizing: border-box;
     }
-    input[type=text] {
+    input[type=text], input[type=number] {
       width: 100%;
       line-height: 1.5em;
     }
@@ -84,6 +84,10 @@
 
 <fieldset>
   <legend>Map Images</legend>
+  <label>
+    <input type="checkbox" id="showmapimages">
+    Show Map Images when hovering over links
+  </label><br />
   <label for="mapimagewidth">Minimum Map Image Width</label>
   <input type="number" id="mapimagewidth" /><br />
   <label for="mapimageheight">Minimum Map Image Height</label>
