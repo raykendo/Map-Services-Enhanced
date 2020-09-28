@@ -53,7 +53,7 @@
    * @function loadElement
    * @param {string} tag - HTML tag name that you want to create.
    * @param {object} attributes - name value object describing properties you want to assign to the object
-   * @param {string} [text] - if present, this is the content you shoul add to the HTML element.
+   * @param {string} [text] - if present, this is the content you should add to the HTML element.
    */
   const loadElement = (tag, attributes, text) => {
     const el = document.createElement(tag);
@@ -61,9 +61,16 @@
       el.setAttribute(a, attributes[a]);
     }
     if (text) {
-      el.innerHTML = text;
+      el.appendChild(document.createTextNode(text));
     }
     return el;
+  };
+
+  const cleanElement = myNode => {
+    while (myNode.firstChild) {
+      myNode.removeChild(myNode.lastChild);
+    }
+    return myNode;
   };
 
   /**
@@ -77,9 +84,10 @@
   const li = (title, content, className) => {
     const node = loadElement("LI", {"class": className || ""});
     if (content === undefined) {
-      node.innerHTML = ["<b>","</b>"].join(title);
+      node.appendChild(loadElement("b", {}, title));
     } else {
-      node.innerHTML = ["<b>", title, ": </b>", (content instanceof Object ? JSON.stringify(content) : content)].join("");
+      node.appendChild(loadElement("b", {}, `${title}: `));
+      node.appendChild(document.createTextNode(content instanceof Object ? JSON.stringify(content) : content))
     }
     return node;
   };
@@ -93,11 +101,12 @@
    * @returns {object} - list item node containing list of properties.
    */
   const addSubList = (title, content, className) => {
-    const node = loadElement("LI", {"class": className || ""}, ["<b>",": </b>"].join(title)), 
-      ul = document.createElement("ul");
+    const node = loadElement("LI", {"class": className || ""});
+    const ul = document.createElement("ul");
     for (let i in content) {
       ul.appendChild(li(unCamelCase(i), content[i]));
     }
+    node.appendChild(loadElement("b", {}, title))
     node.appendChild(ul);
     return node;
   };
@@ -142,34 +151,34 @@
    * @param {object} data - JSON response from the map service.
    * @returns {object} an HTML DOM node with the spatial reference data.
    */
-  const showSpatialReferenceData  = (data) => {
+  const showSpatialReferenceData = (data) => {
     let val="&nbsp;No valid spatial reference available &nbsp;",
-      el = "span", 
+      nodeCSS = "", 
       container = null,
-      srnode = null, cachenode = null, sr;
+      spatialRefNode = null, 
+      cacheStatus = null, 
+      sr;
     if (data && data.hasOwnProperty("spatialReference")) {
       sr = data.spatialReference;
       val = sr.latestWkid || sr.wkid || sr.latestWkt || sr.wkt || val;
+      nodeCSS = `color: ${getColor(val)};background: ${getCompColor(val)};border-radius:4px;padding:2px;`;
+      container = loadElement("span");
       if (sr.latestWkid || sr.wkid) {
-        el = "a";
+        // link to well-known-id at spatialreference.org
+        spatialRefNode = loadElement("a", {
+          "href": `${window.location.protocol}//spatialreference.org/ref/?search=${val}`,
+          "style": nodeCSS
+        }, val);
+      } else {
+        spatialRefNode = loadElement("span", {
+          "style": nodeCSS
+        }, val);
       }
-      container = document.createElement("span");
-      srnode = document.createElement(el);
-      if (el === "a") {
-        srnode.setAttribute("href", "http://spatialreference.org/ref/?search=" + val);
-      }
-      srnode.setAttribute("style", ["color:", getColor(val), ";background:", getCompColor(val), ";border-radius:4px;padding:2px;"].join(""));
-      srnode.innerHTML = val;
-      container.appendChild(srnode);
+      container.appendChild(spatialRefNode);
 
       // handle tiled or dynamic service
-      cachenode = document.createElement("b");
-      if (data.singleFusedMapCache) {
-        cachenode.innerHTML = " tiled";
-      } else {
-        cachenode.innerHTML = " dynamic";
-      }
-      container.appendChild(cachenode);
+      cacheStatus = data.singleFusedMapCache ? "tiled" : "dynamic";
+      container.appendChild(loadElement("b", {}, " " + cacheStatus));
     }
     
     return container;
@@ -469,7 +478,12 @@
       const hasError = response.hasOwnProperty("error") && !!response.error;
       let item = document.createElement("li");
       if (response.count !== undefined && response.count !== null) {
-        item.innerHTML =  ["<b>Features with values: </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(timeCheck),"</i>)"].join("");
+        item.appendChild(loadElement("b", {}, "Features with values:"));
+        item.appendChild(document.createTextNode(` ${response.count} `))
+        if (response.count === 0) {
+          item.appendChild(loadElement("b", {"style": "color:#f00;"}, "!!! "));
+        }
+        item.appendChild(loadElement("i", {}, `Response time: ${responseTime(timeCheck)}`));
       } else if (hasError) {
         item = reportError(response.error, field);
       }
@@ -482,7 +496,12 @@
               let item2 = document.createElement("li");
               const hasError = response2.hasOwnProperty("error") && !!response2.error;
               if (response2.count !== undefined && response2.count !== null) {
-                item2.innerHTML = ["<b>Features without empty values: </b>", response2.count, (!response2.count ? "<b style=\"color:#f00;\"> !!!</b>":""), " (<i>Response time: ", responseTime(newTimeCheck),"</i>)"].join("");
+                item2.appendChild(loadElement("b", {}, "Features without empty values:"));
+                item2.appendChild(document.createTextNode(` ${response2.count} `));
+                if (response2.count === 0) {
+                  item2.appendChild(loadElement("b", {"style": "color:#f00;"}, "!!! "));
+                }
+                item2.appendChild(loadElement("i", {}, `Response time: ${responseTime(newTimeCheck)}`));
               } else if (hasError) {
                 item2 = reportError(response2.error);
               }
@@ -524,7 +543,11 @@
         let node = document.createElement("li");
         const hasError = response.hasOwnProperty("error") && !!response.error;
         if (response.count !== undefined && response.count !== null) {
-          node.innerHTML = ["<b>", item.name, ": </b>", response.count, (!response.count ? "<b style=\"color:#f00;\"> !!!</b>" : "")].join("");
+          node.appendChild(loadElement("b", {}, `${item.name}: `));
+          node.appendChild(document.createTextNode(` ${response.count} `));
+          if (response.count === 0) {
+            node.appendChild(loadElement("b", {"style": "color:#f00;"}, "!!! "));
+          }
         } else if (hasError) {
           node = reportError(response.error);
         }
@@ -749,7 +772,7 @@
      */
     updateFields(dataItems) {
       const layerId = parseInt(this.layerSelect.value, 10);
-      this.fieldSelect.innerHTML = "";
+      cleanElement(this.fieldSelect);
       dataItems.filter((item) => item.id === layerId).forEach((item) => {
         
         if (!item || !item.fields || !item.fields.length) {
@@ -777,7 +800,8 @@
       const val = this.fieldSelect.value;
       const layerId = this.layerSelect.value;
       // loading of values
-      this.valueList.innerHTML = "<option value=''>Loading...</option>";
+      cleanElement(this.valueList);
+      this.valueList.appendChild(loadElement("option", {"value": ""}, "Loading"));
       notifyLoading(true, LOADING_SOMETHING_CSS);
       this.valueList.setAttribute("disabled", "disabled");
       // stop additional clicks on fieldSelect from subsequent calls
@@ -796,7 +820,7 @@
       // re-enable fieldlist
       this.fieldSelect.removeAttribute("disabled");
       // test if features were returned.
-      this.valueList.innerHTML = "";
+      cleanElement(this.valueList);
       if (!res || !res.features || res.features.length === 0) {
         this.valueList.setAttribute("disabled", "disabled");
         df.appendChild(loadElement("option", {value: ""}, "No values found for this field"));

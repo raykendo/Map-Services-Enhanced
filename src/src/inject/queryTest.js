@@ -69,11 +69,17 @@
       el.setAttribute(a, attributes[a]);
     }
     if (text) {
-      el.innerHTML = text;
+      el.appendChild(document.createTextNode(text));
     }
     return el;
   };
 
+  const cleanElement = myNode => {
+    while (myNode.firstChild) {
+      myNode.removeChild(myNode.lastChild);
+    }
+    return myNode;
+  };
 
   /**
    * Returns whether a field is queryable
@@ -437,7 +443,7 @@
      */
     updateFields(dataItems) {
       const layerId = parseInt(this.layerSelect.value, 10);
-      this.fieldSelect.innerHTML = "";
+      cleanElement(this.fieldSelect);
       dataItems.filter(function (item) {
         return item.id === layerId;
       }).forEach((item) => {
@@ -470,7 +476,8 @@
       const layerId = this.layerSelect.value;
       // loading of values
       notifyLoading(true);
-      this.valueList.innerHTML = "<option value=''>Loading...</option>";
+      cleanElement(this.valueList);
+      this.valueList.appendChild(loadElement("option", {"value": ""}, "Loading..."))
       this.valueList.setAttribute("disabled", "disabled");
       // stop additional clicks on fieldSelect from subsequent calls
       this.fieldSelect.setAttribute("disabled", "disabled");
@@ -488,14 +495,14 @@
       // re-enable fieldlist
       this.fieldSelect.removeAttribute("disabled");
       // test if features were returned.
-      this.valueList.innerHTML = "";
+      cleanElement(this.valueList);
       if (!res || !res.features || res.features.length === 0) {
         this.valueList.setAttribute("disabled", "disabled");
         df.appendChild(loadElement("option", {value: ""}, "No values found for this field"));
       } else {
         this.valueList.removeAttribute("disabled");   
         res.features.forEach((feature) => {
-          const featureValue = isNaN(feature.attributes[val] * 1) ? "'{0}'".replace("{0}", feature.attributes[val]) : feature.attributes[val];
+          const featureValue = isNaN(feature.attributes[val] * 1) ? `'${feature.attributes[val]}'`: feature.attributes[val];
           df.appendChild(loadElement("option", {"value": featureValue}, feature.attributes[val]));
         });  
       }

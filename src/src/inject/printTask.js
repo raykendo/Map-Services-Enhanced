@@ -45,7 +45,7 @@
       el.setAttribute(a, attributes[a]);
     }
     if (text) {
-      el.innerHTML = text;
+      el.appendChild(document.createTextNode(text));
     }
     return el;
   };

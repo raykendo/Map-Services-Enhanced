@@ -2,8 +2,8 @@
   const d = document, 
     txt = d.getElementById("searchblank"), 
     btn = d.getElementById("searchbtn"),
-    searchcount = d.getElementById("searchedfeatures"),
-    resultcount = d.getElementById("searchresultscount"),
+    searchCount = d.getElementById("searchedfeatures"),
+    resultCount = d.getElementById("searchresultscount"),
     resultList = d.getElementById("searchresults");
   let locs, hits;
 		
@@ -38,6 +38,26 @@
     }
   };
 
+   /**
+   * Creates an HTML element.
+   * @function loadElement
+   * @param {string} tag - HTML tag name that you want to create.
+   * @param {object} attributes - name value object describing properties you want to assign to the object
+   * @param {string} [text] - if present, this is the content you should add to the HTML element.
+   */
+  const loadElement = (tag, attributes, text) => {
+    const el = document.createElement(tag);
+    if (attributes) {
+      for (let a in attributes) {
+        el.setAttribute(a, attributes[a]);
+      }
+    }
+    if (text) {
+      el.appendChild(document.createTextNode(text));
+    }
+    return el;
+  };
+
   /**
    * get values of dot.notated.parameters out of a JSON object
    * @function getFinalVal
@@ -63,12 +83,18 @@
    * @param {string} url
    */
   const printResult = (field, result, url) => {
-    let li = d.createElement("li"), link = d.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("target", "_blank");
-    link.innerHTML = ["<b>Source: </b>", url.replace(/^\S*\/rest\/services\//i, "."), "<br /><b>", field, ": </b>", result].join("");
+    const li = d.createElement("li");
+    const link = loadElement("a", {
+      "href": url,
+      "target": "_blank"
+    });
+    link.appendChild(loadElement("b", {}, "Source: "));
+    link.appendChild(d.createTextNode(url.replace(/^\S*\/rest\/services\//i, ".")));
+    link.appendChild(d.createElement("br"));
+    link.appendChild(loadElement("b", {}, `${field}: `));
+    link.appendChild(d.createTextNode(result))
     li.appendChild(link);
-    resultList.appendChild(li);
+    return li;
   };
 
   /**
@@ -82,7 +108,7 @@
   const checkAndPrint = (myTest, field, result, url) => {
     if (myTest(result)) {
       hits++;
-      printResult(field, result, url);
+      resultList.appendChild(printResult(field, result, url));
     }
   };
 
@@ -144,13 +170,13 @@
       locs++;
       responseSearch(url, data, myTest);
       list = list.concat(subUrls(url, data));
-      searchcount.innerHTML = locs.toString();
-      resultcount.innerHTML = hits.toString();
+      searchCount.firstChild.nodeValue = locs.toString();
+      resultCount.firstChild.nodeValue = hits.toString();
       if (list.length) {	
         queryMe(list, myTest); 
       } else {
         btn.removeAttribute("disabled");
-        btn.innerHTML = "Search";
+        btn.firstChild.nodeValue = "Search";
         Array.prototype.forEach.call(d.getElementsByTagName("a"), (ln) => {
           let location = ln.href;
           ln.addEventListener("click", () => {
@@ -169,10 +195,10 @@
       while (resultList.childNodes.length) {
         resultList.removeChild(resultList.childNodes[0]);
       }
-      btn.innerHTML = "Scanning";
+      btn.firstChild.nodeValue = "Scanning";
       btn.setAttribute("disabled", "disabled");
-      searchcount.innerHTML = "";
-      resultcount.innerHTML = "";
+      searchCount.firstChild.nodeValue = " ";
+      resultCount.firstChild.nodeValue = " ";
 
       if (/^\d*\.?\d+$/.test(txt.value)) {
         searchFor = /\./.test(txt.value) ? parseFloat(txt.value) : parseInt(txt.value, 10);

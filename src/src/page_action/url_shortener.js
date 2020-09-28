@@ -74,10 +74,10 @@
     if (typeof shortenerBlank.select === "function") {
       shortenerBlank.select();
       document.execCommand("Copy");
-      copyBtn.innerHTML = "Copied!";
+      copyBtn.firstChild.nodeValue = "Copied!";
       copyBtn.setAttribute("disabled", "disabled");
       setTimeout(() => {
-        copyBtn.innerHTML = "Copy to Clipboard";
+        copyBtn.firstChild.nodeValue = "Copy to Clipboard";
         copyBtn.removeAttribute("disabled");
       }, 1000);
     }
