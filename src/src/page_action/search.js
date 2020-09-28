@@ -183,7 +183,10 @@
       }
       locs = 0;
       hits = 0;
-      chrome.tabs.query({highlighted: true}, (tabs) => {
+      chrome.tabs.query({
+        active: true, 
+        currentWindow: true
+      }, (tabs) => {
         tabs.forEach((tab) => queryMe([tab.url.replace(/\?[\B]*$/, "")], myTest));
       });
     } else { 
