@@ -1,6 +1,8 @@
 {
   let active;
   
+  
+
    // Status effects
   const STATUS = {
     LOADING: "loading-start",
@@ -36,6 +38,22 @@
     } catch (e) {
       window.console && console.log(e);
     }
+  };
+
+  const LOADING_CSS = "loading-querytest";
+  const notifyLoading = (value) => {
+    const bodyClasses = (document.body.className || "").split(" ");
+    if (value) {
+      // add loading css to page
+      bodyClasses.push(LOADING_CSS);
+    } else {
+      let index = bodyClasses.indexOf(LOADING_CSS);
+      if (index > -1) {
+        // remove the loading CSS
+        bodyClasses.splice(index, 1);
+      }
+    }
+    document.body.className = bodyClasses.join(" ");
   };
 
   /**
@@ -451,7 +469,7 @@
       const val = this.fieldSelect.value;
       const layerId = this.layerSelect.value;
       // loading of values
-      updateStatus(STATUS.LOADING);
+      notifyLoading(true);
       this.valueList.innerHTML = "<option value=''>Loading...</option>";
       this.valueList.setAttribute("disabled", "disabled");
       // stop additional clicks on fieldSelect from subsequent calls
@@ -482,7 +500,7 @@
         });  
       }
       this.valueList.appendChild(df);
-      updateStatus(STATUS.LOAD_COMPLETE);
+      notifyLoading(false);
     }
   }
 
@@ -530,19 +548,6 @@
 
       insertDefaultWhereClause();
     }); 
-  };
-
-  /**
-   * Handle status updates
-   * @function updateStatus
-   * @param {string} status
-   */
-  const updateStatus = (status) => {
-    try {
-      chrome.runtime.sendMessage({MSE_STATUS: status});
-    } catch (err) {
-      // do nothing
-    }
   };
 
   chrome.extension.sendMessage({}, function(/*response*/) {

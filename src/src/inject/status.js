@@ -85,35 +85,10 @@
       statusNode.className = statusNode.className.replace(" open", "");
     }
   };
-
-  const showLoading = () => {
-    if (!/loading/i.test(settingsImg.className))
-      settingsImg.className += " loading";
-  };
-
-  const hideLoading = () => {
-    if (/loading/i.test(settingsImg.className))
-      settingsImg.className = settingsImg.className.replace(" loading", "");
-  };
-
  
   showSettingsImg();
 
   statusNode.addEventListener("click", openOptionsForm);
-
-  // set up listener for status changes
-  chrome.runtime.onMessage.addListener(
-    (request/*, sender*/ /*, sendResponse*/) => {
-      switch (request.DISPLAY_STATUS) {
-      case STATUS.LOADING:
-        showLoading();
-        break;
-      case STATUS.LOAD_COMPLETE:
-        hideLoading();
-        break;
-      }
-      return true;
-    });
 
   class OptionsForm {
     

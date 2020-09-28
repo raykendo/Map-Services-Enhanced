@@ -172,7 +172,13 @@ textarea.hidden {
     } 
 }
 
-.status .loading {
+/* Changing how loading is handled to remove messages between pages */
+.loading-metadata .status-icon,
+.loading-querytest .status-icon,
+.loading-mapimage .status-icon,
+.loading-domains .status-icon,
+.loading-nulls .status-icon,
+.loading-something .status-icon {
     -webkit-animation:spin 1s linear infinite;
     animation:spin 1s linear infinite;
 }

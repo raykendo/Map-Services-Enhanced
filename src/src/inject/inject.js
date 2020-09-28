@@ -1,6 +1,6 @@
 {
-  let colorhash = {},
-    active;
+  const COLORHASH = {};
+  let active = null;
   
   // Status effects
   const STATUS = {
@@ -109,9 +109,9 @@
    * @returns {string} a CSS hex string for a color.
    */
   const getColor = (item) => {
-    if (colorhash[item]) { return colorhash[item]; }
-    colorhash[item] = "#" + (0x1000000 + (Math.random()) * 0xffffff).toString(16).substr(1, 6);
-    return colorhash[item];
+    if (COLORHASH[item]) { return COLORHASH[item]; }
+    COLORHASH[item] = "#" + (0x1000000 + (Math.random()) * 0xffffff).toString(16).substr(1, 6);
+    return COLORHASH[item];
   };
 
   /**
@@ -126,7 +126,7 @@
    * @returns {string} a CSS hext string for a color that is either lighter or darker than the current color.
    */
   const getCompColor = (item) => {
-    const col = colorhash[item],
+    const col = COLORHASH[item],
       mid = [col.substr(1,1),col.substr(3,1),col.substr(5,1)].sort()[1],
       coltbl = "fedcba98".indexOf(mid) > -1 ? "0000000001234567" : "89abcdefffffffff";
     let newcol = "";
@@ -456,7 +456,7 @@
    */
   const checkForNulls = (url, fields, nodes) => {
     if (!fields.length) {
-      updateStatus(STATUS.LOAD_COMPLETE); 
+      notifyLoading(false, LOADING_NULLS_CSS);
       return; 
     }
     const field = fields.shift(),
@@ -508,7 +508,7 @@
    */
   const checkDomains = (url, fields, nodes, tr) => {
     if (!fields.length) { 
-      updateStatus(STATUS.LOAD_COMPLETE);
+      notifyLoading(false, LOADING_DOMAINS_CSS);
       return; 
     }
     if (!tr) {
@@ -536,12 +536,12 @@
           if (fields.length) {
             checkDomains(url, fields, nodes);
           } else {
-            updateStatus(STATUS.LOAD_COMPLETE);
+            notifyLoading(false, LOADING_DOMAINS_CSS);
           }
         }
       });
     } else {
-      updateStatus(STATUS.LOAD_COMPLETE);
+      notifyLoading(false, LOADING_DOMAINS_CSS);
     }
   };
 
@@ -778,7 +778,7 @@
       const layerId = this.layerSelect.value;
       // loading of values
       this.valueList.innerHTML = "<option value=''>Loading...</option>";
-      updateStatus(STATUS.LOADING);
+      notifyLoading(true, LOADING_SOMETHING_CSS);
       this.valueList.setAttribute("disabled", "disabled");
       // stop additional clicks on fieldSelect from subsequent calls
       this.fieldSelect.setAttribute("disabled", "disabled");
@@ -808,7 +808,7 @@
         });  
       }
       this.valueList.appendChild(df);
-      updateStatus(STATUS.LOAD_COMPLETE);
+      notifyLoading(false, LOADING_SOMETHING_CSS);
     }
   }
 
@@ -832,17 +832,23 @@
   };
 
 
-  /**
-   * Handle status updates
-   * @function updateStatus
-   * @param {string} status
-   */
-  const updateStatus = (status) => {
-    try {
-      chrome.runtime.sendMessage({MSE_STATUS: status});
-    } catch (err) {
-      // do nothing
+  const LOADING_METADATA_CSS = "loading-metadata";
+  const LOADING_NULLS_CSS = "loading-nulls";
+  const LOADING_DOMAINS_CSS = "loading-domains";
+  const LOADING_SOMETHING_CSS = "loading-something";
+  const notifyLoading = (value, cssClass) => {
+    const bodyClasses = (document.body.className || "").split(" ");
+    if (value) {
+      // add loading css to page
+      bodyClasses.push(cssClass);
+    } else {
+      let index = bodyClasses.indexOf(cssClass);
+      if (index > -1) {
+        // remove the loading CSS
+        bodyClasses.splice(index, 1);
+      }
     }
+    document.body.className = bodyClasses.join(" ");
   };
 
   chrome.extension.sendMessage({}, (/*response*/) => {
@@ -874,13 +880,13 @@
           
         /**
          * collect and present service data based on a list of urls.
-         * @function collectData
+         * @function collectMetaData
          * @param {string[]} f - a list of urls to collect data on.
          * @param {boolean} canCountFeatures - if true, count features.
          */
-        const collectData = (f, canCountFeatures) => {
+        const collectMetaData = (f, canCountFeatures) => {
           if (!f || !f.length) {
-            updateStatus(STATUS.LOAD_COMPLETE);
+            notifyLoading(false, LOADING_METADATA_CSS);
             return; 
           }
           const data = f.shift();
@@ -903,7 +909,7 @@
                   tags[data.i].parentNode.appendChild(countList);
                 });
               }
-              collectData(f, canCountFeatures);
+              collectMetaData(f, canCountFeatures);
             });
         };
 
@@ -913,8 +919,8 @@
         }, (items) => {
           //console.log(urls, items);
           if (urls && urls.length && items.autoMetadata) {
-            updateStatus(STATUS.LOADING);
-            collectData(urls, items.autoFeatureCounts);
+            notifyLoading(true, LOADING_METADATA_CSS);
+            collectMetaData(urls, items.autoFeatureCounts);
           }
         });
         
@@ -932,7 +938,7 @@
                 const domainFields = [];
                 let domainFieldHTML;
                 if (items.autoFieldCounts) {
-                  updateStatus(STATUS.LOADING);
+                  notifyLoading(true, LOADING_NULLS_CSS);
                   checkForNulls(url, results.fields.slice(0), fieldHTML.slice(0));
                 }
                 if (items.autoDomainCounts && results.fields.some(hasDomainTest)) {
@@ -954,7 +960,7 @@
 
                   // filter out nulled out HTML nodes.
                   domainFieldHTML = domainFieldHTML.filter((item) => !!item );
-                  updateStatus(STATUS.LOADING);
+                  notifyLoading(true, LOADING_DOMAINS_CSS);
                   checkDomains(url, domainFields, domainFieldHTML, null);
                 }
               });
